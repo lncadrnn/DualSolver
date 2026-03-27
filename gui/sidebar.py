@@ -16,6 +16,7 @@ from gui.storage import (
     delete_history_item, toggle_pin, toggle_archive,
     DEFAULT_SETTINGS,
 )
+from gui.rounded import RoundedFrame
 
 
 # ── Sidebar dimensions ──────────────────────────────────────────────────
@@ -29,21 +30,23 @@ class Sidebar:
         self.app = app
         self._open = False
 
-        # ── Fonts ────────────────────────────────────────────────────────
-        self._font       = tkfont.Font(family="Segoe UI", size=13)
-        self._font_bold  = tkfont.Font(family="Segoe UI", size=13, weight="bold")
-        self._font_small = tkfont.Font(family="Segoe UI", size=11)
-        self._font_title = tkfont.Font(family="Segoe UI", size=16, weight="bold")
-        self._font_icon  = tkfont.Font(family="Segoe UI", size=18)
-        self._font_hist  = tkfont.Font(family="Consolas", size=12)
-        self._font_dots  = tkfont.Font(family="Segoe UI", size=14, weight="bold")
-        self._font_menu  = tkfont.Font(family="Segoe UI", size=12)
+        # ── Fonts (use app's modern families) ────────────────────────────
+        _ui = getattr(app, '_ui_family', "Segoe UI")
+        _mono = getattr(app, '_mono_family', "Consolas")
+        self._font       = tkfont.Font(family=_ui, size=13)
+        self._font_bold  = tkfont.Font(family=_ui, size=13, weight="bold")
+        self._font_small = tkfont.Font(family=_ui, size=11)
+        self._font_title = tkfont.Font(family=_ui, size=16, weight="bold")
+        self._font_icon  = tkfont.Font(family=_ui, size=18)
+        self._font_hist  = tkfont.Font(family=_mono, size=12)
+        self._font_dots  = tkfont.Font(family=_ui, size=14, weight="bold")
+        self._font_menu  = tkfont.Font(family=_ui, size=12)
 
         # ── Backdrop — dark overlay behind sidebar ───────────────────────
         self._backdrop = tk.Frame(app, bg="#000000")
 
         # ── Sidebar panel — overlays on top using place() ────────────────
-        self._panel = tk.Frame(app, width=_SIDEBAR_W, bg="#050505")
+        self._panel = tk.Frame(app, width=_SIDEBAR_W, bg="#060810")
         self._panel.place_forget()
         self._panel.pack_propagate(False)
 
@@ -87,8 +90,8 @@ class Sidebar:
     # ── Colour helpers ──────────────────────────────────────────────────
 
     def _build_colours(self) -> None:
-        from gui.themes import DARK_PALETTE, LIGHT_PALETTE
-        p = DARK_PALETTE if self.app._theme == "dark" else LIGHT_PALETTE
+        from gui.themes import DARK_PALETTE
+        p = DARK_PALETTE
         self.c = {
             "bg":       p["BG_DARKER"],
             "bg2":      p["BG"],
@@ -120,9 +123,9 @@ class Sidebar:
         self._update_sidebar_scrollbar_style()
 
     def _update_sidebar_scrollbar_style(self) -> None:
-        """Style the sidebar scrollbar to match the current theme."""
-        from gui.themes import DARK_PALETTE, LIGHT_PALETTE
-        p = DARK_PALETTE if self.app._theme == "dark" else LIGHT_PALETTE
+        """Style the sidebar scrollbar."""
+        from gui.themes import DARK_PALETTE
+        p = DARK_PALETTE
         bg  = p["BG_DARKER"]
         sbg = p["SCROLLBAR_BG"]
         sac = p["SCROLLBAR_ACT"]
@@ -185,7 +188,7 @@ class Sidebar:
         self._page = "main"
         self._render_page()
 
-        _dim = "#b0b4ba" if self.app._theme == "light" else "#1a1a1a"
+        _dim = "#050810"
         self._backdrop.place(x=0, y=0, relwidth=1, relheight=1)
         self._backdrop.configure(bg=_dim)
         self._backdrop.lift()
@@ -246,8 +249,7 @@ class Sidebar:
             from PIL import Image, ImageTk
             base = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "assets")
-            fname = ("darkmode-logo.png" if self.app._theme == "dark"
-                     else "lightmode-logo.png")
+            fname = "darkmode-logo.png"
             path = os.path.normpath(os.path.join(base, fname))
             img = Image.open(path)
             h = 56
@@ -366,12 +368,15 @@ class Sidebar:
         c = self.c
         record_id = rec.get("id", "")
 
-        card = tk.Frame(self._inner, bg=c["card"],
-                        highlightbackground=c["border"],
-                        highlightthickness=1)
-        card.pack(fill=tk.X, padx=16, pady=(3, 1))
+        from gui import themes
+        rf = RoundedFrame(self._inner, bg_color=c["card"],
+                          border_color=c["border"],
+                          corner_radius=themes.CORNER_RADIUS_SM,
+                          border_width=1, padding=2)
+        rf.pack(fill=tk.X, padx=16, pady=(3, 1))
+        card = rf.inner
 
-        inner = tk.Frame(card, bg=c["card"], padx=10, pady=6)
+        inner = tk.Frame(card, bg=c["card"], padx=8, pady=4)
         inner.pack(fill=tk.X)
 
         # Top row: equation + three-dot button
@@ -402,7 +407,7 @@ class Sidebar:
 
         # Timestamp — tight below equation, readable colour per theme
         ts = rec.get("timestamp", "")
-        ts_fg = c["fg"]  # white in dark mode, black in light mode
+        ts_fg = c["fg"]
         tk.Label(inner, text=ts, font=self._font_small, bg=c["card"],
                  fg=ts_fg, anchor="w").pack(fill=tk.X, pady=(0, 0))
 
@@ -618,17 +623,6 @@ class Sidebar:
         self._apply_settings_to_app(settings)
 
     def _apply_settings_to_app(self, settings: dict) -> None:
-        # Theme
-        desired = settings.get("theme", "dark")
-        if desired != self.app._theme:
-            self.app._theme = desired
-            self.app._refresh_header_logo()
-            self.app._apply_theme()
-            self._build_colours()
-            self._apply_colours()
-            if self._open:
-                self._render_page()
-
         # Animation speed
         speed = settings.get("animation_speed", "normal")
         speed_map = {"slow": 24, "normal": 12, "fast": 4, "instant": 0}

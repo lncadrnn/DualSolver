@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import font as tkfont
 
 from gui import themes
+from gui.rounded import RoundedFrame
 
 
 class AnimationMixin:
@@ -54,7 +55,8 @@ class AnimationMixin:
                 def destroy(self): pass
                 def winfo_exists(self): return False
             return _Dummy()
-        status_font = tkfont.Font(family="Segoe UI", size=12, slant="italic")
+        _ui = getattr(self, '_ui_family', 'Segoe UI')
+        status_font = tkfont.Font(family=_ui, size=12, slant="italic")
         lbl = tk.Label(parent, text=text, font=status_font, bg=bg,
                        fg=themes.TEXT_DIM, anchor="w")
         lbl.pack(fill=tk.X, pady=(6, 2))
@@ -97,8 +99,12 @@ class AnimationMixin:
         """Build animation queue from *result* and kick it off."""
         loading.destroy()
 
-        bot = tk.Frame(self._chat_frame, bg=themes.BOT_BG, padx=18, pady=14)
-        bot.pack(fill=tk.X, padx=20, pady=(4, 6))
+        bot_rf = RoundedFrame(self._chat_frame, bg_color=themes.BOT_BG,
+                              corner_radius=themes.CORNER_RADIUS,
+                              border_width=0, padding=6)
+        bot_rf.pack(fill=tk.X, padx=20, pady=(4, 6))
+        bot = bot_rf.inner
+        bot.configure(padx=12, pady=8)
         tk.Label(bot, text="DualSolver", font=self._bold, bg=themes.BOT_BG,
                  fg=themes.ACCENT, anchor="w").pack(fill=tk.X)
 
@@ -296,10 +302,13 @@ class AnimationMixin:
             self._steps_header_shown = True
             self._render_section_header(parent, "STEPS", "»")
 
-        wrapper = tk.Frame(parent, bg=themes.STEP_BORDER, padx=1, pady=1)
-        wrapper.pack(fill=tk.X, pady=4)
-        card = tk.Frame(wrapper, bg=themes.STEP_BG, padx=14, pady=10)
-        card.pack(fill=tk.X)
+        rf = RoundedFrame(parent, bg_color=themes.STEP_BG,
+                          border_color=themes.STEP_BORDER,
+                          corner_radius=themes.CORNER_RADIUS_SM,
+                          border_width=1, padding=4)
+        rf.pack(fill=tk.X, pady=4)
+        card = rf.inner
+        card.configure(padx=10, pady=6)
 
         step_num = step.get("step_number")
         desc = step["description"]
@@ -379,23 +388,29 @@ class AnimationMixin:
                         educational: bool = False):
         status_lbl.destroy()
         if educational:
-            _border = "#c87800" if self._theme == "dark" else "#c86400"
-            _inner_bg = "#1a1000" if self._theme == "dark" else "#fff8e1"
-            _text_fg = "#ffc048" if self._theme == "dark" else "#7a3c00"
+            _border = "#c87800"
+            _inner_bg = "#1a1000"
+            _text_fg = "#ffc048"
             self._render_section_header_colored(
                 parent, "LINEARITY NOTE", "⚠", fg=_border)
-            ans_frame = tk.Frame(parent, bg=_border, padx=1, pady=1)
-            ans_frame.pack(fill=tk.X, pady=(2, 4))
-            ans_inner = tk.Frame(ans_frame, bg=_inner_bg, padx=16, pady=12)
-            ans_inner.pack(fill=tk.X)
+            rf = RoundedFrame(parent, bg_color=_inner_bg,
+                              border_color=_border,
+                              corner_radius=themes.CORNER_RADIUS_SM,
+                              border_width=1, padding=4)
+            rf.pack(fill=tk.X, pady=(2, 4))
+            ans_inner = rf.inner
+            ans_inner.configure(padx=12, pady=8)
             lines = final_answer.split("\n")
             self._type_answer_lines(ans_inner, lines, 0, bg=_inner_bg, fg=_text_fg)
         else:
             self._render_section_header(parent, "FINAL ANSWER", "✓")
-            ans_frame = tk.Frame(parent, bg=themes.SUCCESS, padx=1, pady=1)
-            ans_frame.pack(fill=tk.X, pady=(2, 4))
-            ans_inner = tk.Frame(ans_frame, bg=themes.VERIFY_BG, padx=16, pady=12)
-            ans_inner.pack(fill=tk.X)
+            rf = RoundedFrame(parent, bg_color=themes.VERIFY_BG,
+                              border_color=themes.SUCCESS,
+                              corner_radius=themes.CORNER_RADIUS_SM,
+                              border_width=1, padding=4)
+            rf.pack(fill=tk.X, pady=(2, 4))
+            ans_inner = rf.inner
+            ans_inner.configure(padx=12, pady=8)
             lines = final_answer.split("\n")
             self._type_answer_lines(ans_inner, lines, 0)
 
@@ -469,10 +484,13 @@ class AnimationMixin:
         if idx < len(steps):
             step = steps[idx]
 
-            wrapper = tk.Frame(parent, bg=themes.STEP_BORDER, padx=1, pady=1)
-            wrapper.pack(fill=tk.X, pady=4)
-            card = tk.Frame(wrapper, bg=themes.STEP_BG, padx=14, pady=10)
-            card.pack(fill=tk.X)
+            rf = RoundedFrame(parent, bg_color=themes.STEP_BG,
+                              border_color=themes.STEP_BORDER,
+                              corner_radius=themes.CORNER_RADIUS_SM,
+                              border_width=1, padding=4)
+            rf.pack(fill=tk.X, pady=4)
+            card = rf.inner
+            card.configure(padx=10, pady=6)
 
             step_num = step.get("step_number")
             desc = step["description"]
@@ -539,9 +557,9 @@ class AnimationMixin:
             ("Runtime", f"{summary.get('runtime_ms', '?')} ms"),
             ("Steps", str(summary.get('total_steps', '?'))),
         ])
-        # Only show verification steps row when it's present and > 0
+        # Only show verification steps row when present, > 0, and not substitution
         v_steps = summary.get('verification_steps')
-        if v_steps is not None and v_steps != 0:
+        if v_steps is not None and v_steps != 0 and not _is_sub:
             details.append(("Verification Steps", str(v_steps)))
         details.extend([
             ("Validation Status", summary.get('validation_status', '?').upper()),

@@ -3,3 +3,4 @@ matplotlib>=3.8
 numpy>=1.26
 fpdf2>=2.8
 pytest>=8.0
+pywinstyles>=1.8

@@ -1,8 +1,9 @@
 """
-DualSolver — Tkinter GUI
+DualSolver — Tkinter GUI  (Glassmorphism redesign)
 
 A chat-style interface for solving linear equations step-by-step.
-Dark theme, scrollable solution area, and collapsible explanations.
+Frosted-glass (glassmorphism) theme, rounded panels, and animated
+step-by-step solutions.
 """
 
 import os
@@ -16,12 +17,16 @@ from gui.sidebar import Sidebar
 # ── Theme data (palettes, mutable colour shortcuts) ────────────────────────
 from gui import themes
 
+# ── Glassmorphism blur effect (Windows acrylic / blur-behind) ──────────────
+from gui.glassmorphism import apply_blur
+
 # ── Mixin classes (each in its own module) ─────────────────────────────────
 from gui.animation import AnimationMixin
 from gui.widgets import WidgetMixin
 from gui.export import ExportMixin
 from gui.symbolpad import SymbolPadMixin
 from gui.settings import SettingsMixin
+from gui.rounded import RoundedFrame, RoundedButton
 
 
 class DualSolverApp(
@@ -41,14 +46,29 @@ class DualSolverApp(
         self.minsize(680, 600)
         self.configure(bg=themes.BG)
 
-        # ── Fonts ────────────────────────────────────────────────────
-        self._default = tkfont.Font(family="Segoe UI", size=14)
-        self._bold    = tkfont.Font(family="Segoe UI", size=14, weight="bold")
-        self._title   = tkfont.Font(family="Segoe UI", size=22, weight="bold")
-        self._mono    = tkfont.Font(family="Consolas", size=15)
-        self._small   = tkfont.Font(family="Segoe UI", size=12)
-        self._frac    = tkfont.Font(family="Consolas", size=13)
-        self._frac_sm = tkfont.Font(family="Consolas", size=11)
+        # ── Apply Windows acrylic blur for frosted-glass effect ────
+        # The dark palette BG (#0a0e1a) tints the acrylic layer.
+        self._blur_active = apply_blur(self, style="acrylic")
+
+        # ── Fonts (modern family with fallback) ────────────────────
+        _ui = "Segoe UI Variable"
+        _mono_family = "Cascadia Code"
+        # Verify the modern fonts exist, fall back to classics
+        _avail = tkfont.families(self)
+        if _ui not in _avail:
+            _ui = "Segoe UI"
+        if _mono_family not in _avail:
+            _mono_family = "Consolas"
+
+        self._default = tkfont.Font(family=_ui, size=14)
+        self._bold    = tkfont.Font(family=_ui, size=14, weight="bold")
+        self._title   = tkfont.Font(family=_ui, size=22, weight="bold")
+        self._mono    = tkfont.Font(family=_mono_family, size=15)
+        self._small   = tkfont.Font(family=_ui, size=12)
+        self._frac    = tkfont.Font(family=_mono_family, size=13)
+        self._frac_sm = tkfont.Font(family=_mono_family, size=11)
+        self._ui_family = _ui
+        self._mono_family = _mono_family
 
         self._auto_scroll: bool = True
         self._theme: str = "dark"
@@ -80,7 +100,7 @@ class DualSolverApp(
         self._header.pack(fill=tk.X)
         self._header.pack_propagate(False)
 
-        self._hamburger_font = tkfont.Font(family="Segoe UI", size=20)
+        self._hamburger_font = tkfont.Font(family=self._ui_family, size=20)
         self._hamburger_btn = tk.Button(
             self._header, text="☰", font=self._hamburger_font,
             bg=themes.HEADER_BG, fg=themes.TEXT_DIM,
@@ -94,35 +114,23 @@ class DualSolverApp(
         self._header_logo = self._load_header_logo()
         self._header_logo.pack(side=tk.LEFT, padx=(8, 0))
 
-        self._header_title_font = tkfont.Font(family="Segoe UI", size=18, weight="bold")
+        self._header_title_font = tkfont.Font(family=self._ui_family, size=18, weight="bold")
         self._header_title = tk.Label(
             self._header, text="DualSolver", font=self._header_title_font,
             bg=themes.HEADER_BG, fg=themes.TEXT_DIM,
         )
         self._header_title.pack(side=tk.LEFT, padx=(6, 20))
 
-        self._small_bold = tkfont.Font(family="Segoe UI", size=12, weight="bold")
-        self._new_btn = tk.Button(
+        self._small_bold = tkfont.Font(family=self._ui_family, size=12, weight="bold")
+        self._new_btn = RoundedButton(
             self._header, text="+ New Chat", font=self._small_bold,
-            bg=themes.ACCENT, fg=themes.TEXT_BRIGHT,
-            activebackground=themes.ACCENT_HOVER,
-            activeforeground=themes.TEXT_BRIGHT,
-            bd=0, padx=16, pady=6, cursor="hand2",
+            bg=themes.ACCENT, fg="#ffffff",
+            hover_bg=themes.ACCENT_HOVER, hover_fg="#ffffff",
+            corner_radius=themes.CORNER_RADIUS_BTN,
+            padx=18, pady=7,
             command=self._clear_chat,
         )
-        self._new_btn.pack(side=tk.RIGHT, padx=(0, 20))
-
-        self._theme_btn = tk.Button(
-            self._header, text="☀ Light", font=self._small,
-            bg=themes.HEADER_BG, fg=themes.TEXT_DIM,
-            activebackground=themes.HEADER_BG,
-            activeforeground=themes.TEXT_BRIGHT,
-            bd=0, padx=12, pady=6, cursor="hand2",
-            relief=tk.FLAT, highlightthickness=1,
-            highlightbackground=themes.STEP_BORDER,
-            command=self._toggle_theme,
-        )
-        self._theme_btn.pack(side=tk.RIGHT, padx=(0, 8))
+        self._new_btn.pack(side=tk.RIGHT, padx=(0, 20), pady=16)
 
         # chat area
         self._chat_wrapper = tk.Frame(self._content, bg=themes.BG)
@@ -159,10 +167,16 @@ class DualSolverApp(
         self._input_bar = tk.Frame(self._content, bg=themes.BG_DARKER, pady=14)
         self._input_bar.pack(fill=tk.X, side=tk.BOTTOM)
 
-        self._input_inner = tk.Frame(self._input_bar, bg=themes.INPUT_BG,
-                                     highlightbackground=themes.INPUT_BORDER,
-                                     highlightthickness=1)
-        self._input_inner.pack(fill=tk.X, padx=20)
+        self._input_rounded = RoundedFrame(
+            self._input_bar,
+            bg_color=themes.INPUT_BG,
+            border_color=themes.INPUT_BORDER,
+            corner_radius=themes.CORNER_RADIUS,
+            border_width=2,
+            padding=2,
+        )
+        self._input_rounded.pack(fill=tk.X, padx=20)
+        self._input_inner = self._input_rounded.inner
 
         self._entry_var = tk.StringVar()
         self._entry = tk.Entry(
@@ -170,20 +184,20 @@ class DualSolverApp(
             fg=themes.TEXT_BRIGHT, insertbackground=themes.TEXT_BRIGHT,
             bd=0, relief=tk.FLAT,
             disabledbackground=themes.INPUT_BG,
-            disabledforeground="#666666",
+            disabledforeground=themes.TEXT_DIM,
             textvariable=self._entry_var,
         )
         self._entry.pack(side=tk.LEFT, fill=tk.X, expand=True,
-                         padx=(14, 6), pady=10)
+                         padx=(16, 6), pady=12)
         self._entry.focus_set()
 
         # Clear-input (trash) button — visible only when text is present
-        self._clear_input_font = tkfont.Font(family="Segoe UI", size=14)
+        self._clear_input_font = tkfont.Font(family=self._ui_family, size=14)
         self._clear_input_btn = tk.Button(
             self._input_inner, text="🗑", font=self._clear_input_font,
-            bg=themes.INPUT_BG, fg="#ff4d4d",
+            bg=themes.INPUT_BG, fg=themes.ERROR,
             activebackground=themes.INPUT_BG,
-            activeforeground="#ff6b6b",
+            activeforeground="#ff8a80",
             bd=0, padx=4, pady=4, cursor="hand2", relief=tk.FLAT,
             command=self._clear_input_field,
         )
@@ -208,14 +222,14 @@ class DualSolverApp(
 
         self._stop_btn = tk.Button(
             self._action_frame, text="⏹", font=self._bold,
-            bg="#3a1a1a", fg="#ff6b6b",
-            activebackground="#4a2020", activeforeground="#ff9999",
+            bg="#2a0e14", fg=themes.ERROR,
+            activebackground="#3a1420", activeforeground="#ff8a80",
             bd=0, padx=18, pady=6, cursor="hand2", relief=tk.FLAT,
             command=self._stop_solving,
         )
 
         # Symbol-pad toggle button
-        self._sympad_font = tkfont.Font(family="Segoe UI", size=16)
+        self._sympad_font = tkfont.Font(family=self._ui_family, size=16)
         self._sympad_btn = tk.Button(
             self._input_inner, text="\u2328", font=self._sympad_font,
             bg=themes.INPUT_BG, fg=themes.TEXT_DIM,
@@ -320,8 +334,7 @@ class DualSolverApp(
             from PIL import Image, ImageTk
             base = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "assets")
-            fname = ("darkmode-logo.png" if self._theme == "dark"
-                     else "lightmode-logo.png")
+            fname = "darkmode-logo.png"
             path = os.path.normpath(os.path.join(base, fname))
             if not os.path.exists(path):
                 raise FileNotFoundError(path)
@@ -337,156 +350,10 @@ class DualSolverApp(
             return tk.Label(self._header, text="DualSolver", font=self._title,
                             bg=themes.HEADER_BG, fg=themes.ACCENT)
 
-    def _refresh_header_logo(self):
-        p = themes.palette(self._theme)
-        try:
-            self._header_logo.pack_forget()
-            self._header_logo.destroy()
-        except Exception:
-            pass
-        self._header_logo = self._load_header_logo()
-        self._header_logo.configure(bg=p["HEADER_BG"])
-        self._header_logo.pack(side=tk.LEFT, padx=(8, 0))
-
-        self._header_title.configure(bg=p["HEADER_BG"], fg=p["TEXT_DIM"])
-        self._header_title.pack_forget()
-        self._header_title.pack(side=tk.LEFT, padx=(6, 20))
-
     def _toggle_sidebar(self) -> None:
         self._sidebar.toggle()
 
-    def _toggle_theme(self) -> None:
-        self._theme = "light" if self._theme == "dark" else "dark"
-        self._refresh_header_logo()
-        self._apply_theme()
-        self._sidebar.refresh_theme()
-        # Persist the theme choice
-        from gui.storage import get_settings, save_settings
-        settings = get_settings()
-        settings["theme"] = self._theme
-        save_settings(settings)
 
-    def _apply_theme(self) -> None:
-        """Update global colour variables and re-style all static widgets."""
-        p = themes.palette(self._theme)
-        themes.apply_theme(self._theme)
-
-        # header
-        self._header.configure(bg=p["HEADER_BG"])
-        self._header_logo.configure(bg=p["HEADER_BG"])
-        self._hamburger_btn.configure(bg=p["HEADER_BG"], fg=p["TEXT_DIM"],
-                                      activebackground=p["HEADER_BG"],
-                                      activeforeground=p["TEXT_BRIGHT"])
-        self._new_btn.configure(bg=p["ACCENT"], fg="#ffffff",
-                                activebackground=p["ACCENT_HOVER"],
-                                activeforeground="#ffffff")
-        self._theme_btn.configure(
-            text="🌙 Dark" if self._theme == "light" else "☀ Light",
-            bg=p["HEADER_BG"], fg=p["TEXT_DIM"],
-            activebackground=p["HEADER_BG"],
-            activeforeground=p["TEXT_BRIGHT"],
-            highlightbackground=p["STEP_BORDER"],
-        )
-        # canvas / chat area
-        self.configure(bg=p["BG"])
-        self._content.configure(bg=p["BG"])
-        self._chat_wrapper.configure(bg=p["BG"])
-        self._canvas.configure(bg=p["BG"])
-        self._chat_frame.configure(bg=p["BG"])
-        # input bar
-        self._input_bar.configure(bg=p["BG_DARKER"])
-        self._input_inner.configure(bg=p["INPUT_BG"],
-                                    highlightbackground=p["INPUT_BORDER"])
-        self._action_frame.configure(bg=p["INPUT_BG"])
-        self._entry.configure(bg=p["INPUT_BG"], fg=p["TEXT_BRIGHT"],
-                              insertbackground=p["TEXT_BRIGHT"],
-                              disabledbackground=p["INPUT_BG"])
-        self._send_btn.configure(bg=p["ACCENT"], fg="#ffffff",
-                                 activebackground=p["ACCENT_HOVER"],
-                                 activeforeground="#ffffff")
-        self._sympad_btn.configure(bg=p["INPUT_BG"], fg=p["TEXT_DIM"],
-                                   activebackground=p["INPUT_BG"],
-                                   activeforeground=p["TEXT_BRIGHT"])
-        self._clear_input_btn.configure(bg=p["INPUT_BG"], fg="#ff4d4d",
-                                        activebackground=p["INPUT_BG"],
-                                        activeforeground="#ff6b6b")
-        if self._symbol_pad_win and self._symbol_pad_win.winfo_exists():
-            self._close_symbol_pad()
-        # scrollbar + graph palette
-        self._update_scrollbar_style()
-        try:
-            from solver.graph import set_theme as _graph_set_theme
-            _graph_set_theme(self._theme)
-        except Exception:
-            pass
-        self._retheme_chat(p)
-        self._retheme_graphs()
-
-    def _retheme_graphs(self) -> None:
-        try:
-            from solver.graph import restyle_figure
-        except Exception:
-            return
-        p = themes.palette(self._theme)
-        for entry in self._graph_panels:
-            try:
-                fig, mpl_canvas, tk_widget = entry
-                restyle_figure(fig, self._theme)
-                mpl_canvas.draw()
-                tk_widget.configure(bg=p["STEP_BG"])
-            except Exception:
-                pass
-
-    def _retheme_chat(self, p: dict) -> None:
-        from_palette = (themes.DARK_PALETTE if self._theme == "light"
-                        else themes.LIGHT_PALETTE)
-        trans = {}
-        for key, new_val in p.items():
-            old_val = from_palette.get(key)
-            if old_val:
-                trans[old_val.lower()] = new_val
-
-        from_cases = (themes.DARK_CASE_COLORS if self._theme == "light"
-                      else themes.LIGHT_CASE_COLORS)
-        to_cases   = (themes.LIGHT_CASE_COLORS if self._theme == "light"
-                      else themes.DARK_CASE_COLORS)
-        for case_key in from_cases:
-            for slot in ("bg", "border", "fg"):
-                old_c = from_cases[case_key][slot]
-                new_c = to_cases[case_key][slot]
-                trans[old_c.lower()] = new_c
-
-        _ATTRS = (
-            "bg", "fg", "activebackground",
-            "highlightbackground", "highlightcolor",
-            "insertbackground",
-        )
-
-        def _norm(widget, raw) -> str:
-            try:
-                r, g, b = widget.winfo_rgb(raw)
-                return "#{:02x}{:02x}{:02x}".format(r >> 8, g >> 8, b >> 8)
-            except Exception:
-                return str(raw).lower().strip()
-
-        def _walk(widget):
-            try:
-                cfg = widget.configure()
-                patches = {}
-                for attr in _ATTRS:
-                    if attr in cfg:
-                        norm = _norm(widget, widget.cget(attr))
-                        new_val = trans.get(norm)
-                        if new_val:
-                            patches[attr] = new_val
-                if patches:
-                    widget.configure(**patches)
-            except Exception:
-                pass
-            for child in widget.winfo_children():
-                _walk(child)
-
-        _walk(self._chat_frame)
 
     # ── Welcome screen ──────────────────────────────────────────────────
 
@@ -516,15 +383,15 @@ class DualSolverApp(
 
         examples = ["3x + 2 = 7", "x + π = 10"]
         for eq in examples:
-            btn = tk.Button(
+            btn = RoundedButton(
                 self._welcome_frame, text=eq, font=self._mono,
                 bg=themes.STEP_BG, fg=themes.ACCENT,
-                activebackground=themes.ACCENT,
-                activeforeground="#ffffff",
-                bd=0, padx=20, pady=8, cursor="hand2",
+                hover_bg=themes.ACCENT, hover_fg="#ffffff",
+                corner_radius=themes.CORNER_RADIUS_SM,
+                padx=24, pady=10,
                 command=lambda e=eq: self._use_example(e),
             )
-            btn.pack(pady=3)
+            btn.pack(pady=4)
 
     def _use_example(self, equation: str) -> None:
         """Fill the input with an example, then ask how to solve it."""
@@ -538,16 +405,16 @@ class DualSolverApp(
         """Show a centred modal asking the user to pick symbolic or numerical."""
         p = themes.palette(self._theme)
 
-        # Backdrop (dim overlay)
+        # Backdrop (dim overlay — glass-tinted)
         backdrop = tk.Frame(self, bg="#000000")
         backdrop.place(relx=0, rely=0, relwidth=1, relheight=1)
-        backdrop.configure(bg="#000000")
-        # Semi-transparent look via a low-opacity trick: dark bg
+        backdrop.configure(bg="#050810")
+        # Semi-transparent look via dark navy tint matching glass base
         backdrop.lift()
 
-        # Modal card
+        # Modal card — glass panel with accent glow border
         modal = tk.Frame(self, bg=p["STEP_BG"], padx=0, pady=0,
-                         highlightbackground=p["STEP_BORDER"],
+                         highlightbackground=p["ACCENT"],
                          highlightthickness=2, bd=0)
         modal.place(relx=0.5, rely=0.5, anchor="center")
         modal.lift()
@@ -555,10 +422,10 @@ class DualSolverApp(
         inner = tk.Frame(modal, bg=p["STEP_BG"], padx=36, pady=28)
         inner.pack()
 
-        title_font = tkfont.Font(family="Segoe UI", size=18, weight="bold")
-        label_font = tkfont.Font(family="Segoe UI", size=13)
-        small_font = tkfont.Font(family="Segoe UI", size=11)
-        btn_font   = tkfont.Font(family="Segoe UI", size=14, weight="bold")
+        title_font = tkfont.Font(family=self._ui_family, size=18, weight="bold")
+        label_font = tkfont.Font(family=self._ui_family, size=13)
+        small_font = tkfont.Font(family=self._ui_family, size=11)
+        btn_font   = tkfont.Font(family=self._ui_family, size=14, weight="bold")
 
         tk.Label(inner, text="How do you want this solved?",
                  font=title_font, bg=p["STEP_BG"],
@@ -605,7 +472,7 @@ class DualSolverApp(
                      font=small_font, bg=p["STEP_BG"],
                      fg=p["TEXT_DIM"], anchor="w").pack(fill=tk.X, pady=(0, 2))
             tk.Label(inner, text="e.g.  x = 3   or   x = 3, y = 4",
-                     font=tkfont.Font(family="Segoe UI", size=10),
+                     font=tkfont.Font(family=self._ui_family, size=10),
                      bg=p["STEP_BG"], fg=p["TEXT_DIM"],
                      anchor="w").pack(fill=tk.X, pady=(0, 6))
 
@@ -631,7 +498,7 @@ class DualSolverApp(
                      ).pack(side=tk.LEFT, padx=(0, 8))
 
             sub_compute_mode = tk.StringVar(value="symbolic")
-            toggle_btn_font = tkfont.Font(family="Segoe UI", size=11,
+            toggle_btn_font = tkfont.Font(family=self._ui_family, size=11,
                                           weight="bold")
 
             sym_toggle = tk.Button(toggle_frame, text="📐 Symbolic",
@@ -914,8 +781,12 @@ class DualSolverApp(
     # ── Chat bubbles ────────────────────────────────────────────────────
 
     def _add_user_message(self, text: str) -> None:
-        frame = tk.Frame(self._chat_frame, bg=themes.USER_BG, padx=18, pady=14)
-        frame.pack(fill=tk.X, padx=20, pady=(12, 4))
+        rf = RoundedFrame(self._chat_frame, bg_color=themes.USER_BG,
+                          corner_radius=themes.CORNER_RADIUS,
+                          border_width=0, padding=6)
+        rf.pack(fill=tk.X, padx=20, pady=(12, 4))
+        frame = rf.inner
+        frame.configure(padx=12, pady=8)
         tk.Label(frame, text="You", font=self._bold, bg=themes.USER_BG,
                  fg=themes.ACCENT, anchor="w").pack(fill=tk.X)
         tk.Label(frame, text=text, font=self._mono, bg=themes.USER_BG,
@@ -935,8 +806,12 @@ class DualSolverApp(
 
     def _show_error(self, message: str, loading: tk.Label) -> None:
         loading.destroy()
-        frame = tk.Frame(self._chat_frame, bg=themes.BOT_BG, padx=18, pady=14)
-        frame.pack(fill=tk.X, padx=20, pady=(4, 12))
+        rf = RoundedFrame(self._chat_frame, bg_color=themes.BOT_BG,
+                          corner_radius=themes.CORNER_RADIUS,
+                          border_width=0, padding=6)
+        rf.pack(fill=tk.X, padx=20, pady=(4, 12))
+        frame = rf.inner
+        frame.configure(padx=12, pady=8)
         tk.Label(frame, text="⚠  Error", font=self._bold, bg=themes.BOT_BG,
                  fg=themes.ERROR, anchor="w").pack(fill=tk.X)
         tk.Label(frame, text=message, font=self._default, bg=themes.BOT_BG,
@@ -971,7 +846,7 @@ class DualSolverApp(
             padx=16, pady=10,
         )
 
-        toast_font = tkfont.Font(family="Segoe UI", size=12, weight="bold")
+        toast_font = tkfont.Font(family=self._ui_family, size=12, weight="bold")
         text = f"{icon}  {message}" if icon else message
         tk.Label(toast, text=text, font=toast_font,
                  bg=p["STEP_BG"], fg=fg).pack()

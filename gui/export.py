@@ -191,9 +191,9 @@ class ExportMixin:
 
         # ── Title ───────────────────────────────────────────────────
         pdf.set_font(_font, "B", 20)
-        pdf.set_text_color(26, 140, 255)
+        pdf.set_text_color(0, 150, 199)    # #0096C7 accent
         pdf.cell(0, 12, "DualSolver - Solution Trail", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_draw_color(26, 140, 255)
+        pdf.set_draw_color(0, 150, 199)
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())
         pdf.ln(6)
 
@@ -279,7 +279,7 @@ class ExportMixin:
         # ── GRAPH & ANALYSIS ────────────────────────────────────────
         graph_img_path = None
         try:
-            from solver.graph import build_figure, analyze_result, restyle_figure
+            from solver.graph import build_figure, analyze_result, restyle_figure, set_theme
             fig = build_figure(result)
             if fig is not None:
                 # Restyle to light theme so axis labels/ticks are visible
@@ -290,6 +290,8 @@ class ExportMixin:
                             facecolor="#ffffff", edgecolor="none")
                 tmp.close()
                 graph_img_path = tmp.name
+                # Restore dark palette so in-app graphs stay dark
+                set_theme("dark")
 
                 _section("GRAPH")
                 img_w = pdf.w - 20

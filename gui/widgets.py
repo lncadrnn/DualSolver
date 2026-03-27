@@ -9,6 +9,7 @@ import re
 import tkinter as tk
 
 from gui import themes
+from gui.rounded import RoundedFrame
 
 
 class WidgetMixin:
@@ -41,22 +42,26 @@ class WidgetMixin:
     # ── Card wrapper ───────────────────────────────────────────────────
 
     def _make_card(self, parent: tk.Frame, bg: str) -> tk.Frame:
-        wrapper = tk.Frame(parent, bg=themes.STEP_BORDER, padx=1, pady=1)
-        wrapper.pack(fill=tk.X, pady=4)
-        card = tk.Frame(wrapper, bg=bg, padx=14, pady=10)
-        card.pack(fill=tk.X)
-        return card
+        rf = RoundedFrame(parent, bg_color=bg,
+                          border_color=themes.STEP_BORDER,
+                          corner_radius=themes.CORNER_RADIUS_SM,
+                          border_width=1, padding=4)
+        rf.pack(fill=tk.X, pady=4)
+        rf.inner.configure(padx=10, pady=6)
+        return rf.inner
 
     # ── Fraction-aware math expression renderer ────────────────────────
 
     def _render_math_expr(self, parent: tk.Frame, text: str,
                           font=None, bg: str | None = None,
-                          fg: str = "#0F4C75") -> tk.Frame:
+                          fg: str = "") -> tk.Frame:
         """Render *text*, replacing ⟦num|den⟧ with stacked fractions."""
         if font is None:
             font = self._mono
         if bg is None:
             bg = themes.STEP_BG
+        if not fg:
+            fg = themes.ACCENT
 
         container = tk.Frame(parent, bg=bg)
         container.pack(fill=tk.X)
@@ -131,7 +136,7 @@ class WidgetMixin:
     # ── Case badge colours ─────────────────────────────────────────────
 
     def _get_case_colors(self):
-        return themes.LIGHT_CASE_COLORS if self._theme == "light" else themes.DARK_CASE_COLORS
+        return themes.DARK_CASE_COLORS
 
     # ── Collapsible Graph & Analysis panel ─────────────────────────────
 

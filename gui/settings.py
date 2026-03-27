@@ -24,7 +24,6 @@ class SettingsMixin:
             self._chat_wrapper.pack_forget()
             self._input_bar.pack_forget()
             self._settings_visible = True
-            self._theme_btn.pack_forget()
             self._new_btn.pack_forget()
 
         p = themes.palette(self._theme)
@@ -80,53 +79,32 @@ class SettingsMixin:
         header_row = tk.Frame(center, bg=p["BG"])
         header_row.pack(fill=tk.X, pady=(0, 20))
 
-        back_font = tkfont.Font(family="Segoe UI", size=18)
+        _ui = getattr(self, '_ui_family', 'Segoe UI')
+
+        back_font = tkfont.Font(family=_ui, size=18)
         tk.Button(header_row, text="←", font=back_font,
                   bg=p["BG"], fg=p["TEXT_DIM"],
                   activebackground=p["BG"], activeforeground=p["TEXT_BRIGHT"],
                   bd=0, cursor="hand2", command=self.close_settings_page
                   ).pack(side=tk.LEFT)
 
-        title_font = tkfont.Font(family="Segoe UI", size=22, weight="bold")
+        title_font = tkfont.Font(family=_ui, size=22, weight="bold")
         tk.Label(header_row, text="Settings", font=title_font,
                  bg=p["BG"], fg=p["TEXT_BRIGHT"]).pack(side=tk.LEFT, padx=(12, 0))
 
         # ── Card container ─────────────────────────────────────────
-        card_outer = tk.Frame(center, bg=p["STEP_BORDER"], padx=1, pady=1)
-        card_outer.pack(fill=tk.X)
-        card = tk.Frame(card_outer, bg=p["STEP_BG"], padx=30, pady=24)
-        card.pack(fill=tk.X)
+        from gui.rounded import RoundedFrame
+        card_rf = RoundedFrame(center, bg_color=p["STEP_BG"],
+                               border_color=p["STEP_BORDER"],
+                               corner_radius=themes.CORNER_RADIUS,
+                               border_width=1, padding=6)
+        card_rf.pack(fill=tk.X)
+        card = card_rf.inner
+        card.configure(padx=24, pady=18)
 
-        section_font = tkfont.Font(family="Segoe UI", size=15, weight="bold")
-        label_font   = tkfont.Font(family="Segoe UI", size=13)
-        small_font   = tkfont.Font(family="Segoe UI", size=11)
-
-        # ── Theme ──────────────────────────────────────────────────
-        tk.Label(card, text="Appearance", font=section_font,
-                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
-
-        theme_var = tk.StringVar(value=self._theme)
-        theme_frame = tk.Frame(card, bg=p["STEP_BG"])
-        theme_frame.pack(fill=tk.X, pady=(0, 6))
-
-        for val, label_text in [("dark", "🌙  Dark Mode"), ("light", "☀  Light Mode")]:
-            rb_border = tk.Frame(theme_frame, bg=p["INPUT_BORDER"],
-                                 highlightbackground=p["INPUT_BORDER"],
-                                 highlightthickness=1, bd=0)
-            rb_border.pack(fill=tk.X, pady=3)
-            rb_inner = tk.Frame(rb_border, bg=p["STEP_BG"], padx=8, pady=5)
-            rb_inner.pack(fill=tk.X)
-            rb = tk.Radiobutton(
-                rb_inner, text=label_text, variable=theme_var, value=val,
-                font=label_font, bg=p["STEP_BG"], fg=p["TEXT_BRIGHT"],
-                selectcolor=p["BG"], activebackground=p["STEP_BG"],
-                activeforeground=p["ACCENT"],
-                highlightthickness=0, bd=0, cursor="hand2",
-            )
-            rb.pack(anchor="w")
-
-        # Divider
-        tk.Frame(card, bg=p["TEXT_DIM"], height=1).pack(fill=tk.X, pady=(12, 12))
+        section_font = tkfont.Font(family=_ui, size=15, weight="bold")
+        label_font   = tkfont.Font(family=_ui, size=13)
+        small_font   = tkfont.Font(family=_ui, size=11)
 
         # ── Animation Speed ────────────────────────────────────────
         tk.Label(card, text="Animation Speed", font=section_font,
@@ -200,20 +178,16 @@ class SettingsMixin:
 
         def _save():
             new_settings = {
-                "theme": theme_var.get(),
+                "theme": "dark",
                 "animation_speed": speed_var.get(),
                 "show_verification": verify_var.get(),
                 "show_graph": graph_var.get(),
             }
             save_settings(new_settings)
             self._sidebar._apply_settings_to_app(new_settings)
-            new_p = themes.palette(self._theme)
-            if new_p != p:
-                self._settings_scroll_pos = settings_canvas.yview()[0]
-                self.after(50, self._rebuild_settings_with_scroll)
             self._show_toast("Settings saved!")
 
-        save_font = tkfont.Font(family="Segoe UI", size=14, weight="bold")
+        save_font = tkfont.Font(family=_ui, size=14, weight="bold")
         tk.Button(bottom, text="Save Settings", font=save_font,
                   bg=p["ACCENT"], fg="#ffffff",
                   activebackground=p["ACCENT_HOVER"],
@@ -222,10 +196,13 @@ class SettingsMixin:
                   command=_save).pack(fill=tk.X)
 
         # ── Data Management card ───────────────────────────────────
-        data_outer = tk.Frame(center, bg=p["STEP_BORDER"], padx=1, pady=1)
-        data_outer.pack(fill=tk.X, pady=(20, 0))
-        data_card = tk.Frame(data_outer, bg=p["STEP_BG"], padx=30, pady=24)
-        data_card.pack(fill=tk.X)
+        data_rf = RoundedFrame(center, bg_color=p["STEP_BG"],
+                               border_color=p["STEP_BORDER"],
+                               corner_radius=themes.CORNER_RADIUS,
+                               border_width=1, padding=6)
+        data_rf.pack(fill=tk.X, pady=(20, 0))
+        data_card = data_rf.inner
+        data_card.configure(padx=24, pady=18)
 
         tk.Label(data_card, text="Data Management", font=section_font,
                  bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
@@ -254,7 +231,7 @@ class SettingsMixin:
                 "Clear History", _clear_hist,
             )
 
-        btn_font = tkfont.Font(family="Segoe UI", size=13, weight="bold")
+        btn_font = tkfont.Font(family=_ui, size=13, weight="bold")
 
         clear_hist_border = tk.Frame(data_card, bg=p["INPUT_BORDER"],
                                      highlightbackground=p["INPUT_BORDER"],
@@ -305,7 +282,7 @@ class SettingsMixin:
             overlay.pack(fill=tk.X, pady=(12, 0))
 
             tk.Label(overlay, text=title,
-                     font=tkfont.Font(family="Segoe UI", size=14, weight="bold"),
+                     font=tkfont.Font(family=_ui, size=14, weight="bold"),
                      bg=p["STEP_BG"], fg=p["ERROR"] if danger else p["TEXT_BRIGHT"]
                      ).pack(anchor="w")
             tk.Label(overlay, text=desc, font=small_font,
@@ -354,5 +331,4 @@ class SettingsMixin:
         self._chat_wrapper.pack(fill=tk.BOTH, expand=True)
         self._input_bar.pack(fill=tk.X, side=tk.BOTTOM)
         self._new_btn.pack(side=tk.RIGHT, padx=(0, 20))
-        self._theme_btn.pack(side=tk.RIGHT, padx=(0, 8))
         self._entry.focus_set()

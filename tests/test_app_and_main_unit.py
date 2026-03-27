@@ -28,9 +28,18 @@ class _FakeWidget:
         self.args = args
         self.kwargs = kwargs
         self.packed = False
+        self._bg = "#000000"
 
     def pack(self, *args, **kwargs):
         self.packed = True
+
+    def cget(self, key):
+        return self._bg
+
+    def configure(self, **kwargs):
+        pass
+
+    config = configure
 
 
 class _FakeTk:
@@ -51,17 +60,20 @@ def test_friendly_error_for_parse_and_generic() -> None:
 
 
 def test_show_error_ui_path_does_not_crash(monkeypatch) -> None:
-    monkeypatch.setattr(app_module, "tk", _FakeTk)
+    import tkinter as tk
+    root = tk.Tk()
+    root.withdraw()
 
     class _FakeApp:
         def __init__(self):
-            self._chat_frame = _FakeContainer()
-            self._bold = object()
-            self._default = object()
+            self._chat_frame = tk.Frame(root)
+            self._bold = ("Segoe UI", 14, "bold")
+            self._default = ("Segoe UI", 14)
             self._entry = _FakeEntry()
             self._PHASE_PAUSE = 0
             self._TYPING_SPEED = 0
             self.input_state = None
+            self._theme = "dark"
 
         def _set_input_state(self, enabled: bool) -> None:
             self.input_state = enabled
@@ -77,6 +89,7 @@ def test_show_error_ui_path_does_not_crash(monkeypatch) -> None:
     assert loading.destroyed is True
     assert fake_app.input_state is True
     assert fake_app._entry.focused is True
+    root.destroy()
 
 
 def test_main_entry_runs_app(monkeypatch) -> None:
