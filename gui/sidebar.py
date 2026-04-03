@@ -274,6 +274,7 @@ class Sidebar:
 
         self._make_menu_button(menu, "💬  DualSolver", self._new_chat)
         self._make_menu_button(menu, "⚙  Settings", self._open_settings)
+        self._make_menu_button(menu, "❓  Help & About", self._open_about)
         self._make_menu_button(menu, "📦  Archived", lambda: self._go_page("archived"))
 
         # Divider
@@ -612,6 +613,12 @@ class Sidebar:
         if getattr(self.app, '_about_visible', False):
             self.app.close_about_page()
         self.app.show_settings_page()
+
+    def _open_about(self) -> None:
+        self.close()
+        if getattr(self.app, '_settings_visible', False):
+            self.app.close_settings_page()
+        self.app.show_about_page()
 
     def _new_chat(self) -> None:
         """Start a new chat — clears the current view."""

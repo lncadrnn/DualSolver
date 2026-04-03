@@ -139,16 +139,6 @@ class DualSolverApp(
         )
         self._new_btn.pack(side=tk.RIGHT, padx=(0, 20), pady=16)
 
-        self._about_btn = RoundedButton(
-            self._header, text="?", font=self._small_bold,
-            bg=themes.STEP_BG, fg=themes.TEXT_BRIGHT,
-            hover_bg=themes.ACCENT, hover_fg="#ffffff",
-            corner_radius=themes.CORNER_RADIUS_BTN,
-            padx=14, pady=7,
-            command=self.show_about_page,
-        )
-        self._about_btn.pack(side=tk.RIGHT, padx=(0, 8), pady=16)
-
         # chat area
         self._chat_wrapper = tk.Frame(self._content, bg=themes.BG)
         self._chat_wrapper.pack(fill=tk.BOTH, expand=True)

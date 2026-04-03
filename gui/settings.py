@@ -28,8 +28,6 @@ class SettingsMixin:
             self._input_bar.pack_forget()
             self._settings_visible = True
             self._new_btn.pack_forget()
-            if hasattr(self, '_about_btn') and self._about_btn.winfo_exists():
-                self._about_btn.pack_forget()
 
         p = themes.palette(self._theme)
 
@@ -336,6 +334,4 @@ class SettingsMixin:
         self._chat_wrapper.pack(fill=tk.BOTH, expand=True)
         self._input_bar.pack(fill=tk.X, side=tk.BOTTOM)
         self._new_btn.pack(side=tk.RIGHT, padx=(0, 20), pady=16)
-        if hasattr(self, '_about_btn') and self._about_btn.winfo_exists():
-            self._about_btn.pack(side=tk.RIGHT, padx=(0, 8), pady=16)
         self._entry.focus_set()

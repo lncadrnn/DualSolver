@@ -99,7 +99,7 @@ python main.py
 5. Expand/collapse graph and analysis when available.
 6. Use `Copy to Clipboard` or `Save as PDF` to export results.
 7. Open sidebar (`hamburger`) to review history, pin/archive items, or open settings.
-8. Open `?` for About/Help guidance.
+8. Open the sidebar and choose `Help & About` for guidance.
 
 Keyboard shortcuts:
 
