@@ -26,6 +26,7 @@ from gui.widgets import WidgetMixin
 from gui.export import ExportMixin
 from gui.symbolpad import SymbolPadMixin
 from gui.settings import SettingsMixin
+from gui.about import AboutMixin
 from gui.rounded import RoundedFrame, RoundedButton
 
 
@@ -35,6 +36,7 @@ class DualSolverApp(
     ExportMixin,
     SymbolPadMixin,
     SettingsMixin,
+    AboutMixin,
     tk.Tk,
 ):
     """Main application window."""
@@ -77,6 +79,7 @@ class DualSolverApp(
         self._show_verification: bool = False
         self._show_graph: bool = True
         self._settings_visible: bool = False
+        self._about_visible: bool = False
         self._solve_gen: int = 0
 
         self._build_ui()
@@ -85,8 +88,12 @@ class DualSolverApp(
         self._show_welcome()
 
         self.bind("<Return>", lambda _: self._on_send())
-        self.bind("<Escape>", lambda _: self.close_settings_page()
-              if self._settings_visible else self._sidebar.close())
+        self.bind(
+            "<Escape>",
+            lambda _: self.close_settings_page()
+            if self._settings_visible else self.close_about_page()
+            if self._about_visible else self._sidebar.close(),
+        )
 
     # ── UI construction ─────────────────────────────────────────────────
 
@@ -131,6 +138,16 @@ class DualSolverApp(
             command=self._clear_chat,
         )
         self._new_btn.pack(side=tk.RIGHT, padx=(0, 20), pady=16)
+
+        self._about_btn = RoundedButton(
+            self._header, text="?", font=self._small_bold,
+            bg=themes.STEP_BG, fg=themes.TEXT_BRIGHT,
+            hover_bg=themes.ACCENT, hover_fg="#ffffff",
+            corner_radius=themes.CORNER_RADIUS_BTN,
+            padx=14, pady=7,
+            command=self.show_about_page,
+        )
+        self._about_btn.pack(side=tk.RIGHT, padx=(0, 8), pady=16)
 
         # chat area
         self._chat_wrapper = tk.Frame(self._content, bg=themes.BG)
@@ -210,12 +227,12 @@ class DualSolverApp(
         self._action_frame.pack_propagate(False)
         self.after(50, self._lock_action_frame_size)
 
-        self._send_btn = tk.Button(
+        self._send_btn = RoundedButton(
             self._action_frame, text="Solve ➤", font=self._bold,
             bg=themes.ACCENT, fg=themes.TEXT_BRIGHT,
-            activebackground=themes.ACCENT_HOVER,
-            activeforeground=themes.TEXT_BRIGHT,
-            bd=0, padx=18, pady=6, cursor="hand2",
+            hover_bg=themes.ACCENT_HOVER, hover_fg=themes.TEXT_BRIGHT,
+            corner_radius=themes.CORNER_RADIUS_BTN,
+            padx=18, pady=6,
             command=self._on_send,
         )
         self._send_btn.pack(fill=tk.BOTH, expand=True)

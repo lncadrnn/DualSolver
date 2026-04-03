@@ -604,9 +604,13 @@ class Sidebar:
         self.close()
         if getattr(self.app, '_settings_visible', False):
             self.app.close_settings_page()
+        if getattr(self.app, '_about_visible', False):
+            self.app.close_about_page()
 
     def _open_settings(self) -> None:
         self.close()
+        if getattr(self.app, '_about_visible', False):
+            self.app.close_about_page()
         self.app.show_settings_page()
 
     def _new_chat(self) -> None:
@@ -614,6 +618,8 @@ class Sidebar:
         self.close()
         if getattr(self.app, '_settings_visible', False):
             self.app.close_settings_page()
+        if getattr(self.app, '_about_visible', False):
+            self.app.close_about_page()
         self.app._clear_chat()
 
     # ── Apply settings to the running app ───────────────────────────────
