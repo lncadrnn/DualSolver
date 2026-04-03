@@ -1,9 +1,4 @@
-"""
-DualSolver - About page mixin.
-
-Provides a full-page About view that explains what the app does,
-how to use it, and who built it.
-"""
+"""DualSolver - About/help page mixin."""
 
 import tkinter as tk
 from tkinter import ttk, font as tkfont
@@ -12,11 +7,14 @@ from gui import themes
 from gui.rounded import RoundedFrame
 
 
+APP_VERSION = "1.0.0"
+
+
 class AboutMixin:
-    """Mixed into DualSolverApp - full-page About panel."""
+    """Mixed into DualSolverApp - full-page About/Help panel."""
 
     def show_about_page(self) -> None:
-        """Replace chat content with a full-page About view."""
+        """Replace chat content with a full-page About/Help view."""
         if getattr(self, "_settings_visible", False):
             self.close_settings_page()
 
@@ -78,6 +76,7 @@ class AboutMixin:
 
         _ui = getattr(self, "_ui_family", "Segoe UI")
         title_font = tkfont.Font(family=_ui, size=22, weight="bold")
+        version_font = tkfont.Font(family=_ui, size=11, weight="bold")
         section_font = tkfont.Font(family=_ui, size=15, weight="bold")
         body_font = tkfont.Font(family=_ui, size=13)
         small_font = tkfont.Font(family=_ui, size=12)
@@ -104,23 +103,50 @@ class AboutMixin:
 
         tk.Label(
             header_row,
-            text="About DualSolver",
+            text="DualSolver Help and About",
             font=title_font,
             bg=p["BG"],
             fg=p["TEXT_BRIGHT"],
         ).pack(side=tk.LEFT, padx=(12, 0))
 
-        intro_rf = RoundedFrame(
-            center,
-            bg_color=p["STEP_BG"],
-            border_color=p["STEP_BORDER"],
-            corner_radius=themes.CORNER_RADIUS,
-            border_width=1,
-            padding=6,
-        )
-        intro_rf.pack(fill=tk.X)
-        intro = intro_rf.inner
-        intro.configure(padx=24, pady=18)
+        tk.Label(
+            header_row,
+            text=f"Version {APP_VERSION}",
+            font=version_font,
+            bg=p["STEP_BG"],
+            fg=p["ACCENT"],
+            padx=10,
+            pady=4,
+        ).pack(side=tk.RIGHT)
+
+        def _section_card(parent) -> tk.Frame:
+            card_rf = RoundedFrame(
+                parent,
+                bg_color=p["STEP_BG"],
+                border_color=p["STEP_BORDER"],
+                corner_radius=themes.CORNER_RADIUS,
+                border_width=1,
+                padding=6,
+            )
+            card_rf.pack(fill=tk.X, pady=(16, 0))
+            card = card_rf.inner
+            card.configure(padx=24, pady=18)
+            return card
+
+        def _line(parent, text: str, *, font=body_font,
+                  fg=p["TEXT_BRIGHT"], pady=(0, 4), mono=False) -> None:
+            tk.Label(
+                parent,
+                text=text,
+                font=self._mono if mono else font,
+                bg=p["STEP_BG"],
+                fg=fg,
+                justify=tk.LEFT,
+                wraplength=920,
+                anchor="w",
+            ).pack(anchor="w", fill=tk.X, pady=pady)
+
+        intro = _section_card(center)
 
         tk.Label(
             intro,
@@ -130,80 +156,119 @@ class AboutMixin:
             fg=p["ACCENT"],
         ).pack(anchor="w", pady=(0, 8))
 
-        tk.Label(
+        _line(
             intro,
-            text=(
-                "DualSolver is a project to solve linear equations step by step "
-                "using symbolic and numerical computation."
+            (
+                "DualSolver is a step-by-step solver for linear equations and "
+                "systems, designed for symbolic and numerical computation learning."
             ),
-            font=body_font,
-            bg=p["STEP_BG"],
-            fg=p["TEXT_BRIGHT"],
-            justify=tk.LEFT,
-            wraplength=900,
-        ).pack(anchor="w")
-
-        tk.Label(
+        )
+        _line(
             intro,
-            text=(
-                "This project was developed for Numeric and Symbolic Computation "
-                "(COSC 110) at Cavite State University - Imus."
+            (
+                "Course context: Numeric and Symbolic Computation (COSC 110), "
+                "Cavite State University - Imus."
             ),
             font=small_font,
-            bg=p["STEP_BG"],
             fg=p["TEXT_DIM"],
-            justify=tk.LEFT,
-            wraplength=900,
-        ).pack(anchor="w", pady=(10, 0))
-
-        how_rf = RoundedFrame(
-            center,
-            bg_color=p["STEP_BG"],
-            border_color=p["STEP_BORDER"],
-            corner_radius=themes.CORNER_RADIUS,
-            border_width=1,
-            padding=6,
+            pady=(6, 0),
         )
-        how_rf.pack(fill=tk.X, pady=(16, 0))
-        how = how_rf.inner
-        how.configure(padx=24, pady=18)
+        _line(
+            intro,
+            "Standard output flow: GIVEN -> METHOD -> STEPS -> FINAL ANSWER -> VERIFICATION -> SUMMARY",
+            font=small_font,
+            fg=p["TEXT_DIM"],
+            pady=(6, 0),
+        )
+
+        how = _section_card(center)
 
         tk.Label(
             how,
-            text="How To Use",
+            text="Quick Start",
             font=section_font,
             bg=p["STEP_BG"],
             fg=p["ACCENT"],
         ).pack(anchor="w", pady=(0, 8))
 
         steps = [
-            "1. Type a linear equation or system in the input bar.",
-            "2. Press Solve and choose Symbolic, Numerical, or Substitution mode.",
-            "3. Read each solution phase and final answer in the chat panel.",
-            "4. Use New Chat to reset and solve another problem.",
+            "1. Enter a linear equation or a system in the input bar.",
+            "2. Press Solve (or Enter) and choose a solve mode.",
+            "3. Read the generated trail cards in order.",
+            "4. Expand Graph and Analysis when available.",
+            "5. Export using Copy to Clipboard or Save as PDF.",
+            "6. Use New Chat to clear the current conversation.",
         ]
         for step in steps:
-            tk.Label(
-                how,
-                text=step,
-                font=body_font,
-                bg=p["STEP_BG"],
-                fg=p["TEXT_BRIGHT"],
-                justify=tk.LEFT,
-                wraplength=900,
-            ).pack(anchor="w", pady=(0, 4))
+            _line(how, step)
 
-        creators_rf = RoundedFrame(
-            center,
-            bg_color=p["STEP_BG"],
-            border_color=p["STEP_BORDER"],
-            corner_radius=themes.CORNER_RADIUS,
-            border_width=1,
-            padding=6,
+        _line(
+            how,
+            "Shortcuts: Enter to solve, Escape to close Settings/About/Sidebar.",
+            font=small_font,
+            fg=p["TEXT_DIM"],
+            pady=(6, 0),
         )
-        creators_rf.pack(fill=tk.X, pady=(16, 0))
-        creators = creators_rf.inner
-        creators.configure(padx=24, pady=18)
+
+        modes = _section_card(center)
+
+        tk.Label(
+            modes,
+            text="Solve Modes",
+            font=section_font,
+            bg=p["STEP_BG"],
+            fg=p["ACCENT"],
+        ).pack(anchor="w", pady=(0, 8))
+
+        _line(modes, "- Symbolic (SymPy): exact values, fractions, and symbolic expressions.")
+        _line(modes, "- Numerical (NumPy): decimal approximations for linear equations.")
+        _line(modes, "- Substitution: checks whether provided values satisfy the equation.")
+
+        features = _section_card(center)
+
+        tk.Label(
+            features,
+            text="Key Features",
+            font=section_font,
+            bg=p["STEP_BG"],
+            fg=p["ACCENT"],
+        ).pack(anchor="w", pady=(0, 8))
+
+        feature_lines = [
+            "- Step-by-step solver trail with explanations.",
+            "- Verification section and validation status.",
+            "- Graph and case analysis panel for supported cases.",
+            "- Sidebar history with pin, archive, and delete actions.",
+            "- Settings for animation speed and auto-expand behavior.",
+            "- Symbol pad for quick equation typing.",
+            "- Export trail to clipboard text or PDF.",
+        ]
+        for line in feature_lines:
+            _line(features, line)
+
+        examples = _section_card(center)
+
+        tk.Label(
+            examples,
+            text="Input Examples",
+            font=section_font,
+            bg=p["STEP_BG"],
+            fg=p["ACCENT"],
+        ).pack(anchor="w", pady=(0, 8))
+
+        _line(examples, "Single variable: 3x + 2 = 7", mono=True)
+        _line(examples, "Two variables: 2x + 4y = 1", mono=True)
+        _line(examples, "System: x + y = 10, x - y = 2", mono=True)
+        _line(examples, "Substitution values: x = 3, y = 4", mono=True)
+        _line(
+            examples,
+            "Use comma or semicolon to separate system equations.",
+            font=small_font,
+            fg=p["TEXT_DIM"],
+            pady=(6, 0),
+        )
+
+        creators = _section_card(center)
 
         tk.Label(
             creators,
@@ -213,19 +278,23 @@ class AboutMixin:
             fg=p["ACCENT"],
         ).pack(anchor="w", pady=(0, 8))
 
+        _line(creators, "DualSolver Version: " + APP_VERSION, font=small_font,
+              fg=p["TEXT_DIM"], pady=(0, 8))
+
         for name in [
             "Acal, Lance Adrian",
             "Garcia, Jesly Dinsen",
             "Moreno, Ryel Austin",
         ]:
-            tk.Label(
-                creators,
-                text=name,
-                font=body_font,
-                bg=p["STEP_BG"],
-                fg=p["TEXT_BRIGHT"],
-                justify=tk.LEFT,
-            ).pack(anchor="w", pady=(0, 3))
+            _line(creators, name, pady=(0, 3))
+
+        _line(
+            creators,
+            "Project focus: Symbolic and Numerical Computation to solve linear equations step by step.",
+            font=small_font,
+            fg=p["TEXT_DIM"],
+            pady=(6, 0),
+        )
 
     def close_about_page(self) -> None:
         """Destroy the About page and restore the chat view."""

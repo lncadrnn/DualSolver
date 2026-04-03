@@ -1,112 +1,199 @@
 # DualSolver
 
-DualSolver is a step-by-step linear equation solver that uses SymPy for symbolic computation. It helps students understand how equations are solved by displaying each algebraic step, from initial equation to final answer, through a chat-style Tkinter interface with animated solution trails, interactive graphs, and dark/light theming.
+Version: 1.0.0
 
-## Features
+DualSolver is a desktop learning tool for solving linear equations step by step.
+It supports symbolic computation (exact values), numerical computation (decimal values),
+and substitution checking. The interface is a chat-style Tkinter app with glassmorphism styling,
+animated trails, graph/analysis cards, export options, and local solve history.
 
-- **Step-by-step solving** — Breaks down each equation into individual algebraic steps using SymPy
-- **Solution verification** — Substitutes the answer back into the original equation to confirm correctness
-- **Interactive graphs** — Embedded Matplotlib plots showing intersections and solution points
-- **Non-linear detection** — Identifies unsupported equation types and provides educational explanations
-- **Solution history** — Local log of all solved equations with timestamps, clearable from the sidebar
-- **Animation controls** — Adjustable speed (slow, normal, fast, instant) for step reveals
-- **Dark / light theme** — Live theme toggle across all widgets, graphs, and logos
-- **Symbol pad** — On-screen math keyboard for inserting special characters
-- **Export** — Copy or export solutions externally
-- **Clear input** — Trash icon to quickly clear the input field
-- **Welcome screen** — Clickable example equations to get started instantly
-- **New Chat / Stop** — Reset the conversation or cancel a running solve mid-stream
+This project was developed for Numeric and Symbolic Computation (COSC 110)
+at Cavite State University - Imus.
 
-## Symbolic Computation
+## Repository Review Summary
 
-DualSolver leverages **SymPy** for symbolic algebra — solving equations exactly (fractions, radicals), generating step-by-step breakdowns, detecting auto-simplifications, and validating linearity before solving.
+- The codebase is cleanly split into UI (`gui/`) and solver logic (`solver/`).
+- Solve dispatch is centralized in `solver/engine.py` (`symbolic`, `numerical`, `substitution`).
+- Trail output format is consistent across modes:
+   `GIVEN -> METHOD -> STEPS -> FINAL ANSWER -> VERIFICATION -> SUMMARY`
+   plus `GRAPH & ANALYSIS` in the GUI when applicable.
+- Local persistence is file-based (`data/dualsolver.json`) with no external service dependency.
+- Current test suite status (local): `53 passed`.
 
-The solver produces a **Standard Trail Format**: **GIVEN → METHOD → STEPS → FINAL ANSWER → VERIFICATION → GRAPH & ANALYSIS → SUMMARY**.
+## Core Features
 
-## Prerequisites
+- Symbolic solving via SymPy for exact algebraic results.
+- Numerical solving via NumPy for decimal approximations.
+- Substitution mode to verify whether user-provided values satisfy an equation.
+- Single-equation, multi-variable, and system-of-equations support.
+- Non-linear input detection with educational feedback.
+- Step-by-step trail generation with explanations.
+- Verification steps and validation status in every solve result.
+- Embedded Matplotlib graph and case analysis panel.
+- Export solution trail to clipboard text and PDF.
+- Sidebar history with pin, archive, delete, and clear operations.
+- Settings page for animation speed and section auto-expand behavior.
+- Symbol pad for quick math input.
+- About/Help page (`?` button in header) with in-app guidance.
 
-- **Python 3.10+**
-- **SymPy** ≥ 1.13
-- **Matplotlib** ≥ 3.8
-- **NumPy** ≥ 1.26
-- **Pillow** (optional, for PNG logo rendering in the header)
+## Dependencies
+
+Install from `requirements.txt`:
+
+- `sympy>=1.13`
+- `matplotlib>=3.8`
+- `numpy>=1.26`
+- `fpdf2>=2.8`
+- `pytest>=8.0`
+- `pywinstyles>=1.8`
+
+Notes:
+
+- Tkinter is included with standard CPython on most desktop installs.
+- `pywinstyles` is used for Windows blur effects; the app still runs without blur fallback support.
+- Pillow is optional for loading PNG logos; without Pillow, the app falls back to text labels.
+
+## How To Run
+
+### 1. Create and activate a virtual environment
+
+Windows (PowerShell):
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+macOS/Linux (bash/zsh):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Optional logo support:
+
+```bash
+pip install pillow
+```
+
+### 3. Launch the app
+
+```bash
+python main.py
+```
+
+## How To Use The App
+
+1. Enter an equation in the input bar (for systems, separate equations with `,` or `;`).
+2. Click `Solve` or press `Enter`.
+3. Choose a computation mode in the modal:
+    `Symbolic`, `Numerical`, or `Substitution`.
+4. Read the generated trail cards in order.
+5. Expand/collapse graph and analysis when available.
+6. Use `Copy to Clipboard` or `Save as PDF` to export results.
+7. Open sidebar (`hamburger`) to review history, pin/archive items, or open settings.
+8. Open `?` for About/Help guidance.
+
+Keyboard shortcuts:
+
+- `Enter`: trigger solve flow
+- `Escape`: close Settings/About/sidebar (context-aware)
+
+## Supported Input Patterns
+
+- Single-variable linear equation:
+   `3x + 2 = 7`
+- Single equation, multiple variables:
+   `2x + 4y = 1`
+- System of equations:
+   `x + y = 10, x - y = 2`
+- Substitution values format:
+   `x = 3` or `x = 3, y = 4`
+
+Accepted operators/symbols include:
+
+- `+ - * / ^ = ( ) [ ] { } . , ; :`
+- Unicode `pi` / `π` and `sqrt` / `√` are normalized internally.
+
+## Output Contract
+
+Each solve returns a dictionary with these top-level fields:
+
+- `equation`
+- `given`
+- `method`
+- `steps`
+- `final_answer`
+- `verification_steps`
+- `summary`
+
+`summary` includes runtime, step counts, validation status, timestamp, and computation library.
 
 ## Project Structure
 
-```
+```text
 DualSolver/
-├── main.py                  # Entry point — launches the Tkinter app
-├── requirements.txt         # Python dependencies (sympy, matplotlib, numpy, pillow)
-├── README.md
-├── process.md               # Detailed walkthrough of how the solver works
-│
-├── assets/
-│   ├── darkmode-logo.png    # Logo for dark theme
-│   └── lightmode-logo.png   # Logo for light theme
-│
-├── data/
-│   └── dualsolver.json       # Local storage (history, settings, preferences)
-│
-├── tests/
-│   ├── conftest.py          # Test config (matplotlib Agg backend)
-│   ├── VALIDATION_RULES.md  # Validation checklist + invalid input documentation
-│   ├── test_engine_unit.py
-│   ├── test_graph_unit.py
-│   ├── test_storage_unit.py
-│   ├── test_themes_unit.py
-│   └── test_app_and_main_unit.py
-│
-├── solver/
-│   ├── __init__.py          # Exports solve_linear_equation
-│   ├── engine.py            # SymPy-powered solver with step generation (1 520 lines)
-│   └── graph.py             # Matplotlib graph builder + case analysis (820 lines)
-│
-└── gui/
-    ├── __init__.py          # Exports DualSolverApp
-    ├── app.py               # Main Tkinter window — chat-style interface (569 lines)
-    ├── animation.py         # Step-by-step animation engine (464 lines)
-    ├── widgets.py           # Reusable UI widget builders (200 lines)
-    ├── sidebar.py           # Slide-in sidebar — history, settings (602 lines)
-    ├── settings.py          # Full-page settings panel (215 lines)
-    ├── storage.py           # Local JSON storage — history & preferences (125 lines)
-    ├── export.py            # Solution export / copy functionality (291 lines)
-    ├── symbolpad.py         # On-screen math symbol keyboard (93 lines)
-    └── themes.py            # Dark / light colour palettes (96 lines)
+|- main.py
+|- README.md
+|- process.md
+|- requirements.txt
+|- assets/
+|- data/
+|- gui/
+|- solver/
+`- tests/
 ```
 
-## Installation & Setup
+Key modules:
 
-1. Install Python dependencies:
+- `solver/engine.py`: mode dispatcher and compatibility exports.
+- `solver/symbolic.py`: SymPy-based symbolic solver and trail builder.
+- `solver/numerical.py`: NumPy-based numerical solver and verification.
+- `solver/substitution.py`: substitution checker workflow.
+- `solver/graph.py`: graph rendering and case analysis.
+- `gui/app.py`: main window and solve flow.
+- `gui/about.py`: About/Help page.
+- `gui/settings.py`: settings page.
+- `gui/sidebar.py`: history and navigation.
+- `gui/storage.py`: local JSON persistence.
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Testing
 
-2. Run the application:
-   ```bash
-   python main.py
-   ```
+Run all tests:
 
-## Supported Equation Types
+```bash
+pytest -q
+```
 
-| Type                             | Example Input                 | Method                                              |
-| -------------------------------- | ----------------------------- | --------------------------------------------------- |
-| Single-variable                  | `3x + 2 = 7`                  | Algebraic Isolation                                 |
-| With fractions / exponents       | `x/2 + 1 = 4`, `x^2` detected | Isolation or non-linear education                   |
-| Multi-variable (1 equation)      | `2x + 4y = 1`                 | Solve for each variable in terms of the others      |
-| System (2 equations)             | `x + y = 10, x - y = 2`       | Substitution method with back-substitution          |
-| Larger / underdetermined systems | `a + b + c = 6, a - c = 2`    | Parametric solution with free variables             |
-| Degenerate (identity)            | `2x + 3 = 2x + 3`             | Detects 0 = 0 → infinite solutions                  |
-| Degenerate (contradiction)       | `2x + 3 = 2x + 5`             | Detects 0 = 2 → no solution                         |
-| Non-linear (polynomial)          | `x^2 + 2 = 5`                 | Educational explanation of degree classification    |
-| Non-linear (transcendental)      | `sin(x) = 1`                  | Educational explanation of transcendental functions |
-| Non-linear (denominator)         | `1/x + 1 = 3`                 | Educational explanation of negative exponents       |
-| Non-linear (product)             | `x*y = 6`                     | Educational explanation of variable products        |
+Validation and expected data-contract checks are documented in:
 
-## Technologies Used
+- `tests/VALIDATION_RULES.md`
 
-- **Tkinter** — Python's built-in GUI toolkit (desktop interface with dark/light theming)
-- **SymPy** — Symbolic mathematics library for parsing, solving, and validating equations
-- **Matplotlib** — Embedded graphs for visualising equations and solutions
-- **NumPy** — Numerical evaluation for graph data points
-- **Pillow** — Optional; loads PNG logos in the header bar
+## Data Storage And Privacy
+
+- All history and settings are stored locally in `data/dualsolver.json`.
+- No login, cloud account, or remote database is required.
+
+## Troubleshooting
+
+- Parse error:
+   Ensure input contains exactly one `=` for single equations and valid math symbols only.
+- Non-linear detection:
+   Inputs like `x^2`, `sin(x)`, `1/x`, or `x*y` are intentionally flagged as non-linear.
+- Blur effect missing:
+   On unsupported systems, blur gracefully falls back to normal window rendering.
+- PDF export error:
+   Install `fpdf2` and retry.
+
+## Creators
+
+- Acal, Lance Adrian
+- Garcia, Jesly Dinsen
+- Moreno, Ryel Austin
