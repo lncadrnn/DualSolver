@@ -25,6 +25,7 @@ from solver.symbolic import (                         # noqa: F401
     _BINARY_AFTER,
     _DEGREE_NAMES,
     _TRANS_FUNC_NAMES,
+    _MAX_INPUT_LENGTH,
     # Helpers
     _detect_variables,
     _expand_implicit_vars,
@@ -46,6 +47,8 @@ from solver.symbolic import (                         # noqa: F401
     _nonlinear_error_result,
     _count_terms_in_str,
     _validate_characters,
+    _validate_input_length,
+    _solve_constant_equation,
     _append_solution_step,
     # Original solver (symbolic)
     solve_linear_equation as _solve_symbolic,

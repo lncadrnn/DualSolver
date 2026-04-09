@@ -169,6 +169,13 @@ class AnimationMixin:
                 self._animate_graph(bot, result)
             queue.append(_render_graph)
 
+        # ── WARNINGS (edge cases) ──────────────────────────────────
+        trail_warnings = result.get("warnings", [])
+        if trail_warnings:
+            def _render_warnings():
+                self._animate_warnings(bot, trail_warnings)
+            queue.append(_render_warnings)
+
         # ── SUMMARY ────────────────────────────────────────────────
         summary = result.get("summary", {})
         if summary:
@@ -530,6 +537,17 @@ class AnimationMixin:
             self._type_label(card, desc, self._bold, themes.STEP_BG, themes.TEXT_BRIGHT,
                              callback=_after_desc)
         else:
+            self._scroll_to_bottom()
+
+    def _animate_warnings(self, parent, warnings):
+        """Render edge-case warnings in the trail."""
+        self._render_section_header(parent, "WARNINGS", "⚠")
+        warn_frame = self._make_card(parent, themes.STEP_BG)
+        for w in warnings:
+            tk.Label(warn_frame, text=f"⚠  {w}", font=self._default,
+                     bg=themes.STEP_BG, fg=themes.ERROR, anchor="w",
+                     wraplength=820, justify=tk.LEFT).pack(fill=tk.X, pady=2)
+        if not (self._PHASE_PAUSE == 0 and self._TYPING_SPEED == 0):
             self._scroll_to_bottom()
 
     def _animate_summary(self, parent, summary, status_lbl):

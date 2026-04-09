@@ -18,7 +18,7 @@ at Cavite State University - Imus.
    `GIVEN -> METHOD -> STEPS -> FINAL ANSWER -> VERIFICATION -> SUMMARY`
    plus `GRAPH & ANALYSIS` in the GUI when applicable.
 - Local persistence is file-based (`data/dualsolver.json`) with no external service dependency.
-- Current test suite status (local): `53 passed`.
+- Current test suite status (local): `67 passed`.
 
 ## Core Features
 

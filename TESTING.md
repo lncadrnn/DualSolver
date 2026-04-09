@@ -19,6 +19,7 @@
    - 4.4 [History & Storage Tests — Is My Data Saved?](#44-history--storage-tests--is-my-data-saved)
    - 4.5 [Theme Tests — Do Colors Switch Properly?](#45-theme-tests--do-colors-switch-properly)
    - 4.6 [App & Startup Tests — Does the App Open and Respond?](#46-app--startup-tests--does-the-app-open-and-respond)
+   - 4.7 [Edge Case Tests — Robustness Under Unusual Input](#47-edge-case-tests--robustness-under-unusual-input)
 5. [Manual Testing Checklist](#5-manual-testing-checklist)
    - 5.1 [Basic Workflow](#51-basic-workflow)
    - 5.2 [Computation Modes](#52-computation-modes)
@@ -69,7 +70,7 @@ We use two layers of testing:
 
 | Layer                              | Who Runs It                                                                  | What It Covers                                                                         |
 | ---------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| **Automated tests** (53 tests)     | A developer types one command and the computer checks everything in seconds. | Math accuracy, data validation, error handling, storage, themes, graph generation.     |
+| **Automated tests** (67 tests)     | A developer types one command and the computer checks everything in seconds. | Math accuracy, data validation, error handling, storage, themes, graph generation, edge cases. |
 | **Manual tests** (checklist below) | A person opens the app and walks through each scenario by hand.              | Visual appearance, animations, user experience, PDF output, clipboard, responsiveness. |
 
 **Automated tests give us speed.** They run in under a minute and catch regressions immediately.
@@ -218,6 +219,49 @@ These tests verify the NumPy-based decimal solver and the mode dispatcher.
 
 ---
 
+### 4.7 Edge Case Tests — Robustness Under Unusual Input
+
+> **File:** `tests/test_edge_cases_unit.py` (14 tests)
+
+These tests verify that the app handles unusual, extreme, or unexpected input gracefully — no crashes, clear warnings or messages.
+
+#### Edge Case List
+
+| #   | Edge Case                     | What Could Go Wrong                                    | How We Handle It                                                     |
+| --- | ----------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------- |
+| 1   | **Extremely long input**      | Typing hundreds of characters could slow or crash the parser. | Input over 500 characters is rejected with a clear message.          |
+| 2   | **Division by zero**          | `x/0 = 5` could crash the math engine.                  | Caught and shown as "Division by zero in expression".                |
+| 3   | **No variables (constants)**  | `5 = 5` or `3 = 7` — no variable to solve for.          | Detected as a tautology or contradiction, with a warning in the trail. |
+| 4   | **Identity equation**         | `x = x` or `2x + 3 = 2x + 3` — variable cancels out.   | Trail explains it is an identity (infinite solutions) and logs a warning. |
+| 5   | **Contradiction equation**    | `x + 3 = x + 5` — impossible after simplifying.         | Trail explains it is a contradiction (no solution) and logs a warning. |
+| 6   | **Very large coefficients**   | `99999999999999999x = 1` in numerical mode — precision risk. | Solved, but a warning about floating-point precision appears in the trail. |
+| 7   | **Deeply nested parentheses** | `((((x + 1)))) = 5` — unusual nesting.                  | Solves correctly with no crash.                                      |
+
+#### Automated Test Details
+
+| #   | Test Name (plain language)                        | What It Checks                                                                 |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 1   | **Long input rejected (symbolic)**                | An equation over 500 characters raises a "too long" error.                     |
+| 2   | **Long input rejected (numerical)**               | Same check in numerical mode.                                                 |
+| 3   | **Division by zero — no crash (symbolic)**        | `x/0 = 5` raises a clear error instead of crashing.                            |
+| 4   | **Division by zero — no crash (numerical)**       | Same check in numerical mode.                                                 |
+| 5   | **Tautology: 5 = 5**                              | Returns a trail with "tautology" / "always true" and a warning.               |
+| 6   | **Contradiction: 3 = 7**                           | Returns a trail with "contradiction" and `validation_status = "fail"`.         |
+| 7   | **Tautology in numerical mode**                   | `5 = 5` in numerical mode also returns warnings.                              |
+| 8   | **Identity: x = x**                                | Returns "infinite solutions" / "identity" with a warning in the trail.         |
+| 9   | **Identity: 2x + 3 = 2x + 3**                     | Same identity detection for a more complex equation.                          |
+| 10  | **Contradiction: x + 3 = x + 5**                  | Returns "no solution" / "contradiction" with a warning.                       |
+| 11  | **Large coefficients — precision warning**         | `99999999999999999x = 1` in numerical mode returns a "precision" warning.      |
+| 12  | **Large coefficients — symbolic has no warning**   | Same equation in symbolic mode has no warning (exact answer).                 |
+| 13  | **Deeply nested parentheses**                      | `((((x + 1)))) = 5` solves to `x = 4` with `validation_status = "pass"`.      |
+| 14  | **Nested with operations**                         | `(((2*(x + 3)))) = 10` solves correctly.                                      |
+
+**Warning display:** When an edge case triggers a warning, the trail includes a `warnings` list. The GUI renders these in a **⚠ WARNINGS** section (orange/red text) between the answer and the summary, so the user sees the caution clearly.
+
+**Why it matters:** Real users type unexpected things. The app must never crash — it should explain what went wrong or flag the unusual situation.
+
+---
+
 ## 5. Manual Testing Checklist
 
 Use this checklist when testing the app by hand. Mark each row **Pass** or **Fail**.
@@ -342,6 +386,7 @@ pytest tests/test_graph_unit.py
 pytest tests/test_storage_unit.py
 pytest tests/test_themes_unit.py
 pytest tests/test_app_and_main_unit.py
+pytest tests/test_edge_cases_unit.py
 ```
 
 ### Run a single test by name
@@ -353,10 +398,10 @@ pytest -k "test_solve_linear_equation_required_fields"
 ### What success looks like
 
 ```
-========================= 53 passed in X.XXs =========================
+========================= 67 passed in X.XXs =========================
 ```
 
-All 53 tests should show **passed** with zero failures or errors.
+All 67 tests should show **passed** with zero failures or errors.
 
 ---
 

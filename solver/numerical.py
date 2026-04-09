@@ -48,6 +48,8 @@ from solver.symbolic import (
     _nonlinear_error_result,
     _count_terms_in_str,
     _validate_characters,
+    _validate_input_length,
+    _solve_constant_equation,
 )
 
 
@@ -93,6 +95,9 @@ def solve_numeric(equation_str: str) -> dict:
     """
     t_start = time.perf_counter()
 
+    # ── Validate input length ────────────────────────────────────────
+    _validate_input_length(equation_str)
+
     # ── Normalise Unicode symbols ────────────────────────────────────
     equation_str = equation_str.replace('\u221a', 'sqrt')
     equation_str = equation_str.replace('\u03c0', '(pi)')
@@ -106,7 +111,12 @@ def solve_numeric(equation_str: str) -> dict:
     raw_equations = [eq.strip() for eq in re.split(r'\s*[;,]\s*', equation_str)
                      if eq.strip()]
     all_text = ' '.join(raw_equations)
-    var_names = _detect_variables(all_text)
+
+    # ── Handle constant-only equations (no variables) ────────────────
+    try:
+        var_names = _detect_variables(all_text)
+    except ValueError:
+        return _solve_constant_equation(equation_str, raw_equations, t_start)
 
     if len(raw_equations) > 1:
         return _solve_system_numeric(raw_equations, var_names, equation_str, t_start)
@@ -130,6 +140,14 @@ def solve_numeric(equation_str: str) -> dict:
 
     lhs = _parse_side(lhs_str, var)
     rhs = _parse_side(rhs_str, var)
+
+    # ── Guard against division by zero (SymPy produces zoo) ──────────
+    from sympy import S as _S
+    if lhs.has(_S.ComplexInfinity) or rhs.has(_S.ComplexInfinity):
+        raise ValueError(
+            "Division by zero in expression. "
+            "Check for terms like x/0 or 1/0."
+        )
 
     # ── Linearity / non-linear check (same logic as symbolic) ────────
     combined = lhs - rhs
@@ -238,6 +256,15 @@ def solve_numeric(equation_str: str) -> dict:
     a_val = float(coeff)
     b_val = float(const)  # const = lhs - rhs sans the var term
 
+    # ── Large-coefficient precision warning ──────────────────────────
+    _LARGE_COEFF_THRESHOLD = 1e15
+    _num_warnings = []
+    if abs(a_val) > _LARGE_COEFF_THRESHOLD or abs(b_val) > _LARGE_COEFF_THRESHOLD:
+        _num_warnings.append(
+            "Very large coefficient detected. Floating-point precision "
+            "may be limited — consider using Symbolic mode for an exact answer."
+        )
+
     steps.append({
         "description": "Identify the coefficient and constant",
         "expression": f"{_fmt_num(a_val)}{var_name} + ({_fmt_num(b_val)}) = 0",
@@ -279,6 +306,7 @@ def solve_numeric(equation_str: str) -> dict:
     return _build_result(
         equation_str, _fmt_input_eq, _fmt_input_lhs, _fmt_input_rhs,
         var_name, steps, final_answer, verification_steps, t_start, t_end,
+        warnings=_num_warnings or None,
     )
 
 
@@ -806,13 +834,13 @@ def _build_verification_numeric(lhs_str, rhs_str, var_name, var,
 
 def _build_result(equation_str, fmt_eq, fmt_lhs, fmt_rhs,
                   var_name, steps, final_answer, verification_steps,
-                  t_start, t_end, method_suffix=""):
+                  t_start, t_end, method_suffix="", warnings=None):
     """Construct the standard result dict for single-variable numeric solve."""
     runtime_ms = round((t_end - t_start) * 1000, 2)
     method_name = "Numerical Isolation (Linear)"
     if method_suffix:
         method_name = f"Numerical Isolation (Linear — {method_suffix})"
-    return {
+    result = {
         "equation": equation_str,
         "given": {
             "problem": f"Solve the linear equation (numerically): {fmt_eq}",
@@ -848,6 +876,9 @@ def _build_result(equation_str, fmt_eq, fmt_lhs, fmt_rhs,
             "python": None,
         },
     }
+    if warnings:
+        result["warnings"] = warnings
+    return result
 
 
 if __name__ == "__main__":

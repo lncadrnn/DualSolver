@@ -90,9 +90,15 @@ def _parse_side(expr_str: str, var_symbols):
     # (as, in, for, …) are never handed to parse_expr.
     s = _expand_implicit_vars(s, set(local.keys()))
     try:
-        return parse_expr(s, local_dict=local, transformations=TRANSFORMATIONS)
+        parsed = parse_expr(s, local_dict=local, transformations=TRANSFORMATIONS)
+    except ZeroDivisionError:
+        raise ValueError(
+            f"Division by zero in expression: '{expr_str}'. "
+            f"Check for terms like x/0 or 1/0."
+        )
     except Exception as e:
         raise ValueError(f"Could not parse expression: '{expr_str}'. Error: {e}")
+    return parsed
 
 
 _SUPERSCRIPT = str.maketrans("0123456789+-/()", "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᐟ⁽⁾")
@@ -618,6 +624,18 @@ def _count_terms_in_str(expr_str: str) -> int:
     return count
 
 
+_MAX_INPUT_LENGTH = 500
+
+
+def _validate_input_length(equation_str: str) -> None:
+    """Reject equations that exceed the maximum allowed length."""
+    if len(equation_str) > _MAX_INPUT_LENGTH:
+        raise ValueError(
+            f"Input is too long ({len(equation_str)} characters). "
+            f"Maximum allowed length is {_MAX_INPUT_LENGTH} characters."
+        )
+
+
 def _validate_characters(equation_str: str) -> None:
     """Reject equations that contain characters outside the allowed set.
 
@@ -641,6 +659,116 @@ def _validate_characters(equation_str: str) -> None:
         )
 
 
+def _solve_constant_equation(equation_str: str, raw_equations: list,
+                             t_start: float) -> dict:
+    """Handle equations with no variables (e.g. ``5 = 5`` or ``3 = 7``).
+
+    Returns a trail with a tautology or contradiction result and a
+    warning explaining that no variable was found.
+    """
+    if len(raw_equations) != 1:
+        raise ValueError(
+            "No variable found in the system. Each equation must "
+            "contain at least one variable (e.g. x, y, z)."
+        )
+    eq = raw_equations[0]
+    if '=' not in eq:
+        raise ValueError("Equation must contain '='. Example: 3x + 2 = 7")
+    parts = eq.split('=')
+    if len(parts) != 2:
+        raise ValueError("Equation must contain exactly one '=' sign.")
+    lhs_str, rhs_str = parts[0].strip(), parts[1].strip()
+    if not lhs_str or not rhs_str:
+        raise ValueError("Both sides of the equation must have expressions.")
+
+    try:
+        lhs_val = float(sympify(lhs_str))
+        rhs_val = float(sympify(rhs_str))
+    except Exception:
+        raise ValueError(
+            "No variable found. Include a letter like x, y, or z.\n"
+            "Examples: 2x + 3 = 7  •  x = 5"
+        )
+
+    is_equal = abs(lhs_val - rhs_val) < 1e-12
+    warnings = ["No variable detected — this is a constant equation."]
+
+    steps = [{
+        "step_number": 1,
+        "description": "Evaluate both sides",
+        "expression": f"{lhs_str} = {rhs_str}",
+        "explanation": (
+            f"Both sides are constants: left side = {lhs_val}, "
+            f"right side = {rhs_val}."
+        ),
+    }]
+
+    if is_equal:
+        steps.append({
+            "step_number": 2,
+            "description": "Tautology — always true",
+            "expression": f"{lhs_val} = {rhs_val}  ✓",
+            "explanation": (
+                "Both sides are equal. This is a tautology — "
+                "it is always true regardless of any variable."
+            ),
+        })
+        final_answer = (
+            f"Tautology — {lhs_str} = {rhs_str} is always true.\n"
+            "No variable to solve for."
+        )
+    else:
+        steps.append({
+            "step_number": 2,
+            "description": "Contradiction — never true",
+            "expression": f"{lhs_val} ≠ {rhs_val}  ✗",
+            "explanation": (
+                f"The left side ({lhs_val}) does not equal "
+                f"the right side ({rhs_val}). This is a contradiction."
+            ),
+        })
+        final_answer = (
+            f"Contradiction — {lhs_str} ≠ {rhs_str}.\n"
+            "No variable to solve for."
+        )
+        warnings.append("The equation is a contradiction — it can never be true.")
+
+    t_end = time.perf_counter()
+    runtime_ms = round((t_end - t_start) * 1000, 2)
+
+    return {
+        "equation": equation_str,
+        "given": {
+            "problem": f"Evaluate: {lhs_str} = {rhs_str}",
+            "inputs": {
+                "equation": f"{lhs_str} = {rhs_str}",
+                "left_side": lhs_str,
+                "right_side": rhs_str,
+            },
+        },
+        "method": {
+            "name": "Constant Equation Check",
+            "description": "No variable found — evaluate whether both sides are equal.",
+            "parameters": {
+                "equation_type": "Constant (no variables)",
+            },
+        },
+        "steps": steps,
+        "final_answer": final_answer,
+        "verification_steps": [],
+        "warnings": warnings,
+        "summary": {
+            "runtime_ms": runtime_ms,
+            "total_steps": len(steps),
+            "verification_steps": 0,
+            "validation_status": "pass" if is_equal else "fail",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "library": f"SymPy {sympy.__version__}",
+            "python": None,
+        },
+    }
+
+
 def solve_linear_equation(equation_str: str) -> dict:
     """
     Solve one or more linear equations step by step.
@@ -655,6 +783,9 @@ def solve_linear_equation(equation_str: str) -> dict:
     """
     t_start = time.perf_counter()
 
+    # ── Validate input length ────────────────────────────────────────
+    _validate_input_length(equation_str)
+
     # ── Normalise Unicode symbols to parser-friendly equivalents ─────
     equation_str = equation_str.replace('\u221a', 'sqrt')
     equation_str = equation_str.replace('\u03c0', '(pi)')
@@ -668,7 +799,13 @@ def solve_linear_equation(equation_str: str) -> dict:
     raw_equations = [eq.strip() for eq in re.split(r'\s*[;,]\s*', equation_str)
                      if eq.strip()]
     all_text = ' '.join(raw_equations)
-    var_names = _detect_variables(all_text)
+
+    # ── Handle constant-only equations (no variables) ────────────────
+    try:
+        var_names = _detect_variables(all_text)
+    except ValueError:
+        # No variables found — check for tautology or contradiction
+        return _solve_constant_equation(equation_str, raw_equations, t_start)
 
     if len(raw_equations) > 1:
         return _solve_system(raw_equations, var_names, equation_str, t_start)
@@ -692,6 +829,13 @@ def solve_linear_equation(equation_str: str) -> dict:
 
     lhs = _parse_side(lhs_str, var)
     rhs = _parse_side(rhs_str, var)
+
+    # ── Guard against division by zero (SymPy produces zoo) ──────────
+    if lhs.has(S.ComplexInfinity) or rhs.has(S.ComplexInfinity):
+        raise ValueError(
+            "Division by zero in expression. "
+            "Check for terms like x/0 or 1/0."
+        )
 
     # Verify it's linear in the detected variable
     combined = lhs - rhs
@@ -986,6 +1130,18 @@ def solve_linear_equation(equation_str: str) -> dict:
             "library": f"SymPy {sympy.__version__}",
             "python": None,
         }
+        warnings = []
+        if is_identity:
+            warnings.append(
+                "Identity equation — the variable cancels out. "
+                "Every real number is a solution."
+            )
+        else:
+            warnings.append(
+                "Contradiction — the variable cancels out and the "
+                "remaining constants are not equal. No solution exists."
+            )
+
         return {
             "equation": equation_str,
             "given": given,
@@ -993,6 +1149,7 @@ def solve_linear_equation(equation_str: str) -> dict:
             "steps": steps,
             "final_answer": final_answer,
             "verification_steps": [],
+            "warnings": warnings,
             "summary": summary,
         }
 
@@ -1691,7 +1848,6 @@ def _append_solution_step(steps, var_names, var_symbols, sol_dict,
         "expression": "\n".join(lines),
         "explanation": "Values that satisfy all equations simultaneously.",
     })
-
 
 if __name__ == "__main__":
     # Quick test
