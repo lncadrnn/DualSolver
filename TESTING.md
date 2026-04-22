@@ -290,7 +290,7 @@ Use this checklist when testing the app by hand. Mark each row **Pass** or **Fai
 | M-32 | Check the Graph & Analysis panel.                | The chart displays correctly with labeled axes and a visible solution point. |             |
 | M-33 | Open the About / Help page (`?` button).         | The help page opens with clear usage instructions.                           |             |
 | M-34 | Use the symbol pad to insert `≤`, `≥`, `π`, etc. | Symbols are inserted into the input field at the cursor position.            |             |
-| M-35 | Verify glassmorphism blur effect (Windows).      | The window has a translucent blur behind the app frame.                      |             |
+| M-35 | Verify solid color interface rendering.           | Panels and window backgrounds render as opaque solid colors with no blur.     |             |
 
 ---
 
@@ -365,7 +365,7 @@ All 53 tests should show **passed** with zero failures or errors.
 | Area               | Limitation                                                                                                                                   |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Equation types** | Only linear equations are fully solved. Non-linear inputs (quadratic, trigonometric, etc.) receive educational feedback but are not solved.  |
-| **Platform blur**  | The glassmorphism blur effect requires Windows and the `pywinstyles` library. On other platforms, the app works but without the blur effect. |
+| **Visual style**   | The interface uses opaque solid-color panels by design (no OS blur effects).                                                   |
 | **Logo display**   | The app logo requires the `Pillow` library. Without it, a text label is shown instead.                                                       |
 | **Offline only**   | All data is stored locally in `data/dualsolver.json`. There is no cloud sync or multi-device support.                                        |
 | **History cap**    | A maximum of 200 history entries are kept. Older entries are automatically removed.                                                          |
@@ -384,7 +384,7 @@ All 53 tests should show **passed** with zero failures or errors.
 | **Validation status**   | A pass/fail label in the trail summary indicating whether the solver verified its own answer.                                                    |
 | **System of equations** | Two or more equations solved together (e.g., `x + y = 10, x - y = 2`).                                                                           |
 | **Non-linear**          | An equation involving powers, roots, or trig functions (e.g., `x² + 1 = 0`). DualSolver detects these and explains them but does not solve them. |
-| **Glassmorphism**       | A visual design style with frosted-glass translucency behind UI elements.                                                                        |
+| **Solid theme**         | An opaque interface style where panels and cards use fixed colors instead of translucency or blur.                                             |
 | **SymPy**               | A Python library for symbolic mathematics.                                                                                                       |
 | **NumPy**               | A Python library for numerical computation.                                                                                                      |
 | **Matplotlib**          | A Python library for creating charts and graphs.                                                                                                 |

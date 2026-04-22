@@ -1,36 +1,31 @@
 """
-DualSolver — Glassmorphism colour / theme definitions (dark-only)
+DualSolver — Solid dark colour/theme definitions
 
-Frosted-glass-inspired palette with semi-transparent-looking layers,
-soft glowing borders, and a cyan accent (`#0096C7`).
+Opaque, layered dark panels with clear contrast and a cyan accent (#0096C7).
 
 Design reference:
-    • Primary accent:  #0096C7 (ocean cyan)
-    • Style:           Glassmorphism — layered translucent panels with
-                       subtle borders, prominent rounded corners, and
-                       a sense of depth / hierarchy.
-    • OS blur:         Achieved via ``gui.glassmorphism`` (Windows only).
+    - Primary accent:  #0096C7 (ocean cyan)
+    - Style:           Solid dark UI with rounded cards and clear hierarchy.
 """
 
-# ── UI shape constants (prominent rounding for glass panels) ───────────────
+# ── UI shape constants ──────────────────────────────────────────────────────
 
 CORNER_RADIUS     = 18   # primary glass-panel radius (px)
 CORNER_RADIUS_SM  = 14   # smaller radius for cards / inner elements
 CORNER_RADIUS_BTN = 12   # radius for buttons
 
-# ── Glass-border highlight ─────────────────────────────────────────────────
-# A thin bright-ish border colour simulating light refraction at the edge
-# of a glass surface.  Used by RoundedFrame's "glass" mode.
+# ── Legacy highlight alias ──────────────────────────────────────────────────
+# Kept for compatibility with callers that still use glass_highlight().
 
 GLASS_HIGHLIGHT = "#243050"   # subtle blue-white tint
 
 # ── Immutable palette dict ─────────────────────────────────────────────────
 
 DARK_PALETTE = dict(
-    # --- Base layers (deepest → shallowest) ---
-    BG           = "#0a0e1a",     # deep midnight navy  (window bg / blur tint)
+    # --- Base layers (deepest -> shallowest) ---
+    BG           = "#0a0e1a",     # deep midnight navy
     BG_DARKER    = "#060810",     # deepest layer  (input bar, sidebar base)
-    HEADER_BG    = "#0d1224",     # header glass – one step above BG
+    HEADER_BG    = "#0d1224",     # header layer one step above BG
 
     # --- Accent ---
     ACCENT       = "#0096C7",     # primary accent (ocean cyan)
@@ -41,16 +36,16 @@ DARK_PALETTE = dict(
     TEXT_DIM     = "#8090b0",     # secondary / dimmed labels
     TEXT_BRIGHT  = "#e8ecf4",     # headings & high-emphasis text
 
-    # --- Glass panels ---
-    USER_BG      = "#111830",     # user message bubble glass
-    BOT_BG       = "#0d1228",     # bot message bubble glass
-    STEP_BG      = "#101628",     # card / step glass
-    STEP_BORDER  = "#1e2848",     # glass-edge border (subtle blue tint)
+    # --- Panel surfaces ---
+    USER_BG      = "#111830",     # user message bubble
+    BOT_BG       = "#0d1228",     # bot message bubble
+    STEP_BG      = "#101628",     # card / step panel
+    STEP_BORDER  = "#1e2848",     # panel border (subtle blue tint)
 
     # --- Semantic ---
     SUCCESS      = "#00E676",     # bright green
     ERROR        = "#FF5252",     # vivid red
-    INPUT_BG     = "#0e1324",     # input field glass
+    INPUT_BG     = "#0e1324",     # input field
     INPUT_BORDER = "#1a2545",     # input border (calm)
     VERIFY_BG    = "#081a14",     # verification background
 
@@ -101,7 +96,7 @@ def palette(theme: str = "dark") -> dict:
 
 
 def glass_highlight(theme: str = "dark") -> str:
-    """Return the glass-edge highlight colour."""
+    """Return legacy highlight colour kept for compatibility."""
     return GLASS_HIGHLIGHT
 
 

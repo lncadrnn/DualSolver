@@ -1,8 +1,8 @@
 """
-DualSolver — Tkinter GUI  (Glassmorphism redesign)
+DualSolver — Tkinter GUI (solid dark theme)
 
 A chat-style interface for solving linear equations step-by-step.
-Frosted-glass (glassmorphism) theme, rounded panels, and animated
+Solid-color dark styling with rounded panels and animated
 step-by-step solutions.
 """
 
@@ -16,9 +16,6 @@ from gui.sidebar import Sidebar
 
 # ── Theme data (palettes, mutable colour shortcuts) ────────────────────────
 from gui import themes
-
-# ── Glassmorphism blur effect (Windows acrylic / blur-behind) ──────────────
-from gui.glassmorphism import apply_blur
 
 # ── Mixin classes (each in its own module) ─────────────────────────────────
 from gui.animation import AnimationMixin
@@ -48,9 +45,8 @@ class DualSolverApp(
         self.minsize(680, 600)
         self.configure(bg=themes.BG)
 
-        # ── Apply Windows acrylic blur for frosted-glass effect ────
-        # The dark palette BG (#0a0e1a) tints the acrylic layer.
-        self._blur_active = apply_blur(self, style="acrylic")
+        # Keep an explicit flag for compatibility with older UI code paths.
+        self._blur_active = False
 
         # ── Fonts (modern family with fallback) ────────────────────
         _ui = "Segoe UI Variable"
@@ -412,14 +408,13 @@ class DualSolverApp(
         """Show a centred modal asking the user to pick symbolic or numerical."""
         p = themes.palette(self._theme)
 
-        # Backdrop (dim overlay — glass-tinted)
+        # Backdrop (dim overlay)
         backdrop = tk.Frame(self, bg="#000000")
         backdrop.place(relx=0, rely=0, relwidth=1, relheight=1)
         backdrop.configure(bg="#050810")
-        # Semi-transparent look via dark navy tint matching glass base
         backdrop.lift()
 
-        # Modal card — glass panel with accent glow border
+        # Modal card with solid background + accent border
         modal = tk.Frame(self, bg=p["STEP_BG"], padx=0, pady=0,
                          highlightbackground=p["ACCENT"],
                          highlightthickness=2, bd=0)

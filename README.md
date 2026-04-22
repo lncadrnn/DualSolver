@@ -4,7 +4,7 @@ Version: 1.0.0
 
 DualSolver is a desktop learning tool for solving linear equations step by step.
 It supports symbolic computation (exact values), numerical computation (decimal values),
-and substitution checking. The interface is a chat-style Tkinter app with glassmorphism styling,
+and substitution checking. The interface is a chat-style Tkinter app with a solid dark style,
 animated trails, graph/analysis cards, export options, and local solve history.
 
 This project was developed for Numeric and Symbolic Computation (COSC 110)
@@ -45,12 +45,10 @@ Install from `requirements.txt`:
 - `numpy>=1.26`
 - `fpdf2>=2.8`
 - `pytest>=8.0`
-- `pywinstyles>=1.8`
 
 Notes:
 
 - Tkinter is included with standard CPython on most desktop installs.
-- `pywinstyles` is used for Windows blur effects; the app still runs without blur fallback support.
 - Pillow is optional for loading PNG logos; without Pillow, the app falls back to text labels.
 
 ## How To Run
@@ -187,8 +185,6 @@ Validation and expected data-contract checks are documented in:
    Ensure input contains exactly one `=` for single equations and valid math symbols only.
 - Non-linear detection:
    Inputs like `x^2`, `sin(x)`, `1/x`, or `x*y` are intentionally flagged as non-linear.
-- Blur effect missing:
-   On unsupported systems, blur gracefully falls back to normal window rendering.
 - PDF export error:
    Install `fpdf2` and retry.
 
