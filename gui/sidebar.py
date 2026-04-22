@@ -84,6 +84,7 @@ class Sidebar:
 
         # Active popup menu ref (so we can close it)
         self._popup_menu = None
+        self._scroll_bind_ids: list[tuple[str, str]] = []
 
         self._build_colours()
 
@@ -161,9 +162,43 @@ class Sidebar:
 
     # ── Scrolling ───────────────────────────────────────────────────────
 
+    def _bind_sidebar_scroll_events(self) -> None:
+        """Bind mouse-wheel events globally while sidebar is open."""
+        if self._scroll_bind_ids:
+            return
+        for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            bind_id = self.app.bind(sequence, self._on_scroll, add="+")
+            if bind_id:
+                self._scroll_bind_ids.append((sequence, bind_id))
+
+    def _unbind_sidebar_scroll_events(self) -> None:
+        """Remove temporary sidebar mouse-wheel bindings."""
+        for sequence, bind_id in self._scroll_bind_ids:
+            try:
+                self.app.unbind(sequence, bind_id)
+            except Exception:
+                pass
+        self._scroll_bind_ids.clear()
+
     def _on_scroll(self, event: tk.Event) -> None:
-        if self._open:
-            self._canvas.yview_scroll(int(-event.delta / 120), "units")
+        if not self._open:
+            return
+
+        units = 0
+        delta = getattr(event, "delta", 0)
+        if delta:
+            units = int(-delta / 120)
+            if units == 0:
+                units = -1 if delta > 0 else 1
+        else:
+            num = getattr(event, "num", None)
+            if num == 4:
+                units = -1
+            elif num == 5:
+                units = 1
+
+        if units:
+            self._canvas.yview_scroll(units, "units")
             return "break"
 
     # ── Open / Close ────────────────────────────────────────────────────
@@ -196,7 +231,7 @@ class Sidebar:
         self._panel.lift()
 
         self._backdrop.bind("<Button-1>", lambda e: self.close())
-        self._canvas.bind("<MouseWheel>", self._on_scroll)
+        self._bind_sidebar_scroll_events()
 
     def close(self) -> None:
         if not self._open:
@@ -205,7 +240,7 @@ class Sidebar:
         self._close_popup()
         self._panel.place_forget()
         self._backdrop.place_forget()
-        self._canvas.unbind("<MouseWheel>")
+        self._unbind_sidebar_scroll_events()
         self._clear_inner()
 
     def _close_popup(self) -> None:
