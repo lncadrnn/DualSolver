@@ -235,7 +235,7 @@ class AboutMixin:
             "2. Press Solve (or Enter) and choose a solve mode.",
             "3. Read the generated trail cards in order.",
             "4. Expand Graph and Analysis when available.",
-            "5. Export using Copy to Clipboard or Save as PDF.",
+            "5. Export using Copy to Clipboard or Export (PDF, HTML).",
             "6. Use New Chat to clear the current conversation.",
         ]
         for step in steps:
