@@ -12,7 +12,7 @@ from tkinter import ttk, font as tkfont
 from gui.storage import (
     get_settings, save_settings,
     get_history, get_archived_history,
-    clear_history, add_history,
+    clear_history, add_history, touch_history,
     delete_history_item, toggle_pin, toggle_archive,
     DEFAULT_SETTINGS,
 )
@@ -488,6 +488,7 @@ class Sidebar:
                 mode,
                 values_str=values_str,
                 compute_mode=compute_mode,
+                history_id=record_id,
             )
 
         for widget in (card, inner, eq_label):
@@ -776,8 +777,12 @@ class Sidebar:
     def record_solve(self, equation: str, answer: str, *,
                      mode: str = "symbolic",
                      values_str: str = "",
-                     compute_mode: str = "symbolic") -> None:
+                     compute_mode: str = "symbolic",
+                     history_id: str = "") -> None:
         """Log a solved equation to local history."""
+        if history_id and touch_history(history_id):
+            return
+
         add_history(equation, answer,
                     mode=mode,
                     values_str=values_str,

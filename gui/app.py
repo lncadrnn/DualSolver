@@ -715,7 +715,8 @@ class DualSolverApp(
 
     def _solve_with_mode(self, equation: str, mode: str,
                          values_str: str = "",
-                         compute_mode: str = "symbolic") -> None:
+                         compute_mode: str = "symbolic",
+                         history_id: str = "") -> None:
         """Run the solve pipeline with the chosen mode."""
         if not (self._PHASE_PAUSE == 0 and self._TYPING_SPEED == 0):
             self._auto_scroll = True
@@ -746,6 +747,7 @@ class DualSolverApp(
                     "mode": mode,
                     "values_str": values_str,
                     "compute_mode": compute_mode,
+                    "history_id": history_id,
                 }
                 self.after(0, lambda: self._show_result(result, loading_label)
                            if self._solve_gen == gen else None)

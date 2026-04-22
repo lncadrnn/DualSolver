@@ -78,6 +78,24 @@ def test_delete_history_item(monkeypatch, tmp_path: Path) -> None:
     assert history[0]["id"] == rid2
 
 
+def test_touch_history_updates_timestamp_and_reorders(monkeypatch, tmp_path: Path) -> None:
+    _configure_tmp_db(monkeypatch, tmp_path)
+
+    rid1 = storage.add_history("x = 1", "x = 1")
+    rid2 = storage.add_history("y = 2", "y = 2")
+
+    before = storage.get_history()
+    assert before[0]["id"] == rid2
+    assert before[1]["id"] == rid1
+
+    assert storage.touch_history(rid1) is True
+
+    after = storage.get_history()
+    assert len(after) == 2
+    assert after[0]["id"] == rid1
+    assert after[1]["id"] == rid2
+
+
 def test_clear_all_data(monkeypatch, tmp_path: Path) -> None:
     _configure_tmp_db(monkeypatch, tmp_path)
 

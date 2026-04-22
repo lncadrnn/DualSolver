@@ -105,6 +105,30 @@ def add_history(equation: str, answer: str, *,
     return record_id
 
 
+def touch_history(record_id: str) -> bool:
+    """Update an existing history item's last-opened timestamp/epoch.
+
+    Returns True if the item exists and was updated.
+    """
+    db = _load_db()
+    history = db.get("history", [])
+
+    for idx, rec in enumerate(history):
+        if rec.get("id") != record_id:
+            continue
+
+        rec["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        rec["epoch"] = time.time()
+
+        # Keep the list in newest-first order after touching.
+        history.pop(idx)
+        history.insert(0, rec)
+        _save_db(db)
+        return True
+
+    return False
+
+
 def get_history(include_archived: bool = False) -> list[dict]:
     """Return history list (newest first). Excludes archived by default."""
     db = _load_db()

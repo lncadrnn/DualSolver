@@ -197,6 +197,7 @@ class AnimationMixin:
                 mode=str(_meta.get("mode", "symbolic")),
                 values_str=str(_meta.get("values_str", "")),
                 compute_mode=str(_meta.get("compute_mode", "symbolic")),
+                history_id=str(_meta.get("history_id", "")),
             )
         queue.append(_finish)
 
