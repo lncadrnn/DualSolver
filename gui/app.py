@@ -503,40 +503,52 @@ class DualSolverApp(
             toggle_btn_font = tkfont.Font(family=self._ui_family, size=11,
                                           weight="bold")
 
-            sym_toggle = tk.Button(toggle_frame, text="📐 Symbolic",
+            sym_toggle_border = tk.Frame(toggle_frame, bg=p["STEP_BG"],
+                                         padx=1, pady=1, bd=0)
+            sym_toggle_border.pack(side=tk.LEFT, padx=(0, 4))
+            sym_toggle = tk.Button(sym_toggle_border, text="📐 Symbolic",
                                    font=toggle_btn_font,
                                    bg=p["ACCENT"], fg="#ffffff",
                                    activebackground=p["ACCENT_HOVER"],
                                    activeforeground="#ffffff",
                                    bd=0, padx=12, pady=4, cursor="hand2",
-                                   relief=tk.FLAT)
-            sym_toggle.pack(side=tk.LEFT, padx=(0, 4))
+                                   relief=tk.FLAT,
+                                   highlightthickness=0)
+            sym_toggle.pack()
 
-            num_toggle = tk.Button(toggle_frame, text="🔢 Numerical",
+            num_toggle_border = tk.Frame(toggle_frame, bg=p["STEP_BORDER"],
+                                         padx=1, pady=1, bd=0)
+            num_toggle_border.pack(side=tk.LEFT)
+            num_toggle = tk.Button(num_toggle_border, text="🔢 Numerical",
                                    font=toggle_btn_font,
                                    bg=p["STEP_BG"], fg=p["TEXT_DIM"],
-                                   activebackground=p["ACCENT_HOVER"],
-                                   activeforeground="#ffffff",
+                                   activebackground=p["STEP_BG"],
+                                   activeforeground=p["TEXT_BRIGHT"],
                                    bd=0, padx=12, pady=4, cursor="hand2",
                                    relief=tk.FLAT,
-                                   highlightthickness=1,
-                                   highlightbackground=p["STEP_BORDER"])
-            num_toggle.pack(side=tk.LEFT)
+                                   highlightthickness=0)
+            num_toggle.pack()
 
             def _set_compute(mode_val):
                 sub_compute_mode.set(mode_val)
                 if mode_val == "symbolic":
+                    sym_toggle_border.configure(bg=p["STEP_BG"])
+                    num_toggle_border.configure(bg=p["STEP_BORDER"])
                     sym_toggle.configure(bg=p["ACCENT"], fg="#ffffff",
-                                         highlightthickness=0)
+                                         activebackground=p["ACCENT_HOVER"],
+                                         activeforeground="#ffffff")
                     num_toggle.configure(bg=p["STEP_BG"], fg=p["TEXT_DIM"],
-                                         highlightthickness=1,
-                                         highlightbackground=p["STEP_BORDER"])
+                                         activebackground=p["STEP_BG"],
+                                         activeforeground=p["TEXT_BRIGHT"])
                 else:
+                    num_toggle_border.configure(bg=p["STEP_BG"])
+                    sym_toggle_border.configure(bg=p["STEP_BORDER"])
                     num_toggle.configure(bg=p["ACCENT"], fg="#ffffff",
-                                         highlightthickness=0)
+                                         activebackground=p["ACCENT_HOVER"],
+                                         activeforeground="#ffffff")
                     sym_toggle.configure(bg=p["STEP_BG"], fg=p["TEXT_DIM"],
-                                         highlightthickness=1,
-                                         highlightbackground=p["STEP_BORDER"])
+                                         activebackground=p["STEP_BG"],
+                                         activeforeground=p["TEXT_BRIGHT"])
 
             sym_toggle.configure(command=lambda: _set_compute("symbolic"))
             num_toggle.configure(command=lambda: _set_compute("numerical"))
@@ -564,24 +576,43 @@ class DualSolverApp(
             btn_row = tk.Frame(inner, bg=p["STEP_BG"])
             btn_row.pack(fill=tk.X, pady=(8, 0))
 
-            tk.Button(btn_row, text="← Back", font=small_font,
-                      bg=p["STEP_BG"], fg=p["TEXT_DIM"],
-                      activebackground=p["STEP_BG"],
-                      activeforeground=p["TEXT_BRIGHT"],
-                      bd=0, cursor="hand2",
-                      command=lambda: (backdrop.destroy(), modal.destroy(),
-                                       self._show_solve_mode_modal(equation))
-                      ).pack(side=tk.LEFT)
+            action_btn_width = 11
 
             check_btn = tk.Button(
                 btn_row, text="Check ➤", font=btn_font,
                 bg=p["ACCENT"], fg="#ffffff",
                 activebackground=p["ACCENT_HOVER"],
                 activeforeground="#ffffff",
-                bd=0, padx=18, pady=6, cursor="hand2",
+                bd=0, padx=14, pady=6, width=action_btn_width,
+                cursor="hand2",
                 command=_submit_substitution,
             )
-            check_btn.pack(side=tk.RIGHT)
+            check_btn.pack(side=tk.LEFT)
+
+            cancel_border = tk.Frame(
+                btn_row,
+                bg=p["INPUT_BORDER"],
+                highlightbackground=p["INPUT_BORDER"],
+                highlightthickness=1,
+                bd=0,
+            )
+            cancel_border.pack(side=tk.RIGHT)
+
+            cancel_kwargs = dict(
+                text="Cancel",
+                font=btn_font,
+                bg=p["STEP_BG"],
+                fg=p["TEXT_DIM"],
+                activebackground=p["INPUT_BORDER"],
+                activeforeground=p["TEXT_BRIGHT"],
+                bd=0,
+                padx=14,
+                pady=6,
+                width=action_btn_width,
+                cursor="hand2",
+                command=_cancel,
+            )
+            tk.Button(cancel_border, **cancel_kwargs).pack()
 
         def _cancel():
             backdrop.destroy()
