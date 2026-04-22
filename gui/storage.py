@@ -70,10 +70,22 @@ def save_settings(settings: dict) -> None:
 
 # ── History ──────────────────────────────────────────────────────────────
 
-def add_history(equation: str, answer: str) -> str:
+def add_history(equation: str, answer: str, *,
+                mode: str = "symbolic",
+                values_str: str = "",
+                compute_mode: str = "symbolic") -> str:
     """Append a solve record to history. Returns the new record's ID."""
     db = _load_db()
     record_id = uuid.uuid4().hex[:12]
+
+    mode_norm = (mode or "symbolic").strip().lower()
+    if mode_norm not in {"symbolic", "numerical", "substitution"}:
+        mode_norm = "symbolic"
+
+    compute_norm = (compute_mode or "symbolic").strip().lower()
+    if compute_norm not in {"symbolic", "numerical"}:
+        compute_norm = "symbolic"
+
     record = {
         "id": record_id,
         "equation": equation,
@@ -82,6 +94,9 @@ def add_history(equation: str, answer: str) -> str:
         "epoch": time.time(),
         "pinned": False,
         "archived": False,
+        "mode": mode_norm,
+        "values_str": values_str,
+        "compute_mode": compute_norm,
     }
     db.setdefault("history", []).insert(0, record)  # newest first
     # Keep last 200 entries

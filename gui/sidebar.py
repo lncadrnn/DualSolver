@@ -464,9 +464,31 @@ class Sidebar:
 
         def _use(eq=eq_full):
             self.close()
-            self.app._entry.delete(0, tk.END)
-            self.app._entry.insert(0, eq)
-            self.app._on_send()
+            if getattr(self.app, '_settings_visible', False):
+                self.app.close_settings_page()
+            if getattr(self.app, '_about_visible', False):
+                self.app.close_about_page()
+
+            mode = str(rec.get("mode", "symbolic") or "symbolic").lower()
+            if mode not in {"symbolic", "numerical", "substitution"}:
+                mode = "symbolic"
+
+            values_str = str(rec.get("values_str", "") or "")
+            compute_mode = str(rec.get("compute_mode", "symbolic") or "symbolic").lower()
+            if compute_mode not in {"symbolic", "numerical"}:
+                compute_mode = "symbolic"
+
+            # Legacy history entries may not include substitution values.
+            if mode == "substitution" and not values_str.strip():
+                mode = "symbolic"
+
+            self.app._clear_chat()
+            self.app._solve_with_mode(
+                eq,
+                mode,
+                values_str=values_str,
+                compute_mode=compute_mode,
+            )
 
         for widget in (card, inner, eq_label):
             widget.bind("<Button-1>", lambda e: _use())
@@ -751,6 +773,12 @@ class Sidebar:
     def current_user(self):
         return None  # No user system — kept for compatibility
 
-    def record_solve(self, equation: str, answer: str) -> None:
+    def record_solve(self, equation: str, answer: str, *,
+                     mode: str = "symbolic",
+                     values_str: str = "",
+                     compute_mode: str = "symbolic") -> None:
         """Log a solved equation to local history."""
-        add_history(equation, answer)
+        add_history(equation, answer,
+                    mode=mode,
+                    values_str=values_str,
+                    compute_mode=compute_mode)

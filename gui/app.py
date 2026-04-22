@@ -106,7 +106,7 @@ class DualSolverApp(
         self._hamburger_font = tkfont.Font(family=self._ui_family, size=20)
         self._hamburger_btn = tk.Button(
             self._header, text="☰", font=self._hamburger_font,
-            bg=themes.HEADER_BG, fg=themes.TEXT_DIM,
+            bg=themes.HEADER_BG, fg=themes.TEXT_BRIGHT,
             activebackground=themes.HEADER_BG,
             activeforeground=themes.TEXT_BRIGHT,
             bd=0, padx=10, pady=0, cursor="hand2", relief=tk.FLAT,
@@ -740,6 +740,13 @@ class DualSolverApp(
                 result = solve_linear_equation(equation, mode=mode,
                                                values_str=values_str,
                                                compute_mode=compute_mode)
+                # Keep enough metadata to replay this solve from history
+                # without re-showing the solve-mode selection modal.
+                result["_history_meta"] = {
+                    "mode": mode,
+                    "values_str": values_str,
+                    "compute_mode": compute_mode,
+                }
                 self.after(0, lambda: self._show_result(result, loading_label)
                            if self._solve_gen == gen else None)
             except Exception as exc:

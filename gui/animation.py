@@ -190,7 +190,14 @@ class AnimationMixin:
             self._entry.focus_set()
             if not (self._PHASE_PAUSE == 0 and self._TYPING_SPEED == 0):
                 self._scroll_to_bottom()
-            self._sidebar.record_solve(_equation_text, _answer_text)
+            _meta = result.get("_history_meta", {})
+            self._sidebar.record_solve(
+                _equation_text,
+                _answer_text,
+                mode=str(_meta.get("mode", "symbolic")),
+                values_str=str(_meta.get("values_str", "")),
+                compute_mode=str(_meta.get("compute_mode", "symbolic")),
+            )
         queue.append(_finish)
 
         # Store queue and kick off
