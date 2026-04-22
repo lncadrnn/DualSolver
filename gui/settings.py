@@ -32,6 +32,28 @@ class SettingsMixin:
 
         p = themes.palette(self._theme)
 
+        # Clean up any stale confirm overlays from a previous render.
+        if hasattr(self, '_settings_confirm_modal'):
+            try:
+                if self._settings_confirm_modal is not None:
+                    self._settings_confirm_modal.grab_release()
+            except Exception:
+                pass
+            try:
+                if self._settings_confirm_modal is not None and self._settings_confirm_modal.winfo_exists():
+                    self._settings_confirm_modal.destroy()
+            except Exception:
+                pass
+            self._settings_confirm_modal = None
+
+        if hasattr(self, '_settings_confirm_backdrop'):
+            try:
+                if self._settings_confirm_backdrop is not None and self._settings_confirm_backdrop.winfo_exists():
+                    self._settings_confirm_backdrop.destroy()
+            except Exception:
+                pass
+            self._settings_confirm_backdrop = None
+
         self._settings_frame = tk.Frame(self._content, bg=p["BG"])
         self._settings_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -267,8 +289,7 @@ class SettingsMixin:
                        if data_msg.winfo_exists() else None)
 
         def _confirm_clear_hist():
-            _show_confirm(
-                data_card, data_msg,
+            _show_confirm_modal(
                 "Clear all solve history?",
                 "This will permanently delete all history entries.",
                 "Clear History", _clear_hist,
@@ -298,8 +319,7 @@ class SettingsMixin:
                 if self._settings_visible else None))
 
         def _confirm_reset():
-            _show_confirm(
-                data_card, data_msg,
+            _show_confirm_modal(
                 "Reset all data?",
                 "This will erase all history AND reset settings to defaults.",
                 "Reset Everything", _reset_all,
@@ -317,35 +337,138 @@ class SettingsMixin:
                   bd=0, padx=14, pady=10, cursor="hand2", anchor="w",
                   command=_confirm_reset).pack(fill=tk.X)
 
-        # ── Confirmation helper (inline) ───────────────────────────
-        def _show_confirm(parent, msg_lbl, title, desc, btn_text, action,
-                          danger=False):
-            """Show an inline confirmation prompt."""
-            overlay = tk.Frame(parent, bg=p["STEP_BG"])
-            overlay.pack(fill=tk.X, pady=(12, 0))
+        # ── Confirmation helper (modal overlay) ────────────────────
+        def _show_confirm_modal(title, desc, btn_text, action, danger=False):
+            """Show a centered confirmation modal that never duplicates."""
+            _close_confirm_modal()
 
-            tk.Label(overlay, text=title,
-                     font=tkfont.Font(family=_ui, size=14, weight="bold"),
-                     bg=p["STEP_BG"], fg=p["ERROR"] if danger else p["TEXT_BRIGHT"]
-                     ).pack(anchor="w")
-            tk.Label(overlay, text=desc, font=small_font,
-                     bg=p["STEP_BG"], fg=p["TEXT_DIM"]).pack(anchor="w", pady=(2, 10))
+            backdrop = tk.Frame(self._settings_frame, bg="#050810")
+            backdrop.place(relx=0, rely=0, relwidth=1, relheight=1)
+            backdrop.lift()
 
-            btn_row = tk.Frame(overlay, bg=p["STEP_BG"])
-            btn_row.pack(anchor="w")
+            border_color = p["ERROR"] if danger else p["ACCENT"]
+            modal = tk.Frame(
+                self._settings_frame,
+                bg=p["STEP_BG"],
+                highlightbackground=border_color,
+                highlightthickness=2,
+                bd=0,
+                padx=0,
+                pady=0,
+            )
+            modal.place(relx=0.5, rely=0.5, anchor="center")
+            modal.lift()
 
-            tk.Button(btn_row, text=btn_text, font=btn_font,
-                      bg=p["ERROR"], fg="#ffffff",
-                      activebackground="#cc0000", activeforeground="#ffffff",
-                      bd=0, padx=16, pady=6, cursor="hand2",
-                      command=lambda: (overlay.destroy(), action())
-                      ).pack(side=tk.LEFT, padx=(0, 8))
-            tk.Button(btn_row, text="Cancel", font=btn_font,
-                      bg=p["STEP_BG"], fg=p["TEXT_DIM"],
-                      activebackground=p["INPUT_BORDER"],
-                      activeforeground=p["TEXT_BRIGHT"],
-                      bd=0, padx=16, pady=6, cursor="hand2",
-                      command=overlay.destroy).pack(side=tk.LEFT)
+            self._settings_confirm_backdrop = backdrop
+            self._settings_confirm_modal = modal
+
+            inner = tk.Frame(modal, bg=p["STEP_BG"], padx=30, pady=22)
+            inner.pack()
+
+            title_font = tkfont.Font(family=_ui, size=15, weight="bold")
+            tk.Label(
+                inner,
+                text=title,
+                font=title_font,
+                bg=p["STEP_BG"],
+                fg=p["ERROR"] if danger else p["TEXT_BRIGHT"],
+                anchor="w",
+                justify=tk.LEFT,
+                wraplength=440,
+            ).pack(fill=tk.X)
+
+            tk.Label(
+                inner,
+                text=desc,
+                font=small_font,
+                bg=p["STEP_BG"],
+                fg=p["TEXT_DIM"],
+                anchor="w",
+                justify=tk.LEFT,
+                wraplength=440,
+            ).pack(fill=tk.X, pady=(6, 14))
+
+            btn_row = tk.Frame(inner, bg=p["STEP_BG"])
+            btn_row.pack(fill=tk.X)
+            btn_center = tk.Frame(btn_row, bg=p["STEP_BG"])
+            btn_center.pack(anchor="center")
+
+            def _run_action():
+                _close_confirm_modal()
+                action()
+
+            tk.Button(
+                btn_center,
+                text=btn_text,
+                font=btn_font,
+                bg=p["ERROR"] if danger else p["ACCENT"],
+                fg="#ffffff",
+                activebackground="#cc0000" if danger else p["ACCENT_HOVER"],
+                activeforeground="#ffffff",
+                bd=0,
+                padx=16,
+                pady=7,
+                cursor="hand2",
+                command=_run_action,
+            ).pack(side=tk.LEFT, padx=(0, 8))
+
+            cancel_border = tk.Frame(
+                btn_center,
+                bg=p["INPUT_BORDER"],
+                highlightbackground=p["INPUT_BORDER"],
+                highlightthickness=1,
+                bd=0,
+            )
+            cancel_border.pack(side=tk.LEFT, padx=(8, 0))
+
+            tk.Button(
+                cancel_border,
+                text="Cancel",
+                font=btn_font,
+                bg=p["STEP_BG"],
+                fg=p["TEXT_DIM"],
+                activebackground=p["INPUT_BORDER"],
+                activeforeground=p["TEXT_BRIGHT"],
+                bd=0,
+                padx=16,
+                pady=7,
+                cursor="hand2",
+                command=_close_confirm_modal,
+            ).pack()
+
+            backdrop.bind("<Button-1>", lambda _e: _close_confirm_modal())
+            modal.bind("<Escape>", lambda _e: _close_confirm_modal())
+            modal.focus_set()
+            try:
+                modal.grab_set()
+            except Exception:
+                pass
+
+        def _close_confirm_modal():
+            """Close the active confirm modal if present."""
+            modal = getattr(self, '_settings_confirm_modal', None)
+            backdrop = getattr(self, '_settings_confirm_backdrop', None)
+
+            if modal is not None:
+                try:
+                    modal.grab_release()
+                except Exception:
+                    pass
+                try:
+                    if modal.winfo_exists():
+                        modal.destroy()
+                except Exception:
+                    pass
+
+            if backdrop is not None:
+                try:
+                    if backdrop.winfo_exists():
+                        backdrop.destroy()
+                except Exception:
+                    pass
+
+            self._settings_confirm_modal = None
+            self._settings_confirm_backdrop = None
 
     def _rebuild_settings_with_scroll(self) -> None:
         """Rebuild settings page and restore saved scroll position."""
@@ -362,6 +485,28 @@ class SettingsMixin:
         """Destroy the settings page and restore the chat view."""
         if not self._settings_visible:
             return
+
+        modal = getattr(self, '_settings_confirm_modal', None)
+        backdrop = getattr(self, '_settings_confirm_backdrop', None)
+        if modal is not None:
+            try:
+                modal.grab_release()
+            except Exception:
+                pass
+            try:
+                if modal.winfo_exists():
+                    modal.destroy()
+            except Exception:
+                pass
+            self._settings_confirm_modal = None
+        if backdrop is not None:
+            try:
+                if backdrop.winfo_exists():
+                    backdrop.destroy()
+            except Exception:
+                pass
+            self._settings_confirm_backdrop = None
+
         if hasattr(self, '_settings_scroll_id') and hasattr(self, '_settings_canvas'):
             try:
                 self._settings_canvas.unbind_all("<MouseWheel>")
