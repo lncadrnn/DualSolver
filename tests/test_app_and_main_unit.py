@@ -52,11 +52,19 @@ class _FakeTk:
 
 def test_friendly_error_for_parse_and_generic() -> None:
     msg_parse = DualSolverApp._friendly_error("2x +", ValueError("Could not parse expression"))
-    assert "Could not understand" in msg_parse
+    assert "could not be parsed as valid math syntax" in msg_parse.lower()
+    assert "How to fix it" in msg_parse
+
+    msg_missing_equal = DualSolverApp._friendly_error(
+        "2x + 3",
+        ValueError("Equation must contain '='. Example: 3x + 2 = 7"),
+    )
+    assert "expression, not an equation" in msg_missing_equal.lower()
+    assert "Add exactly one '=' sign" in msg_missing_equal
 
     msg_generic = DualSolverApp._friendly_error("2x+1=0", RuntimeError("boom"))
-    assert "could not process" in msg_generic.lower()
-    assert "Details: boom" in msg_generic
+    assert "unexpected problem" in msg_generic.lower()
+    assert "Technical detail: boom" in msg_generic
 
 
 def test_show_error_ui_path_does_not_crash(monkeypatch) -> None:
