@@ -1,5 +1,7 @@
 """DualSolver - About/help page mixin."""
 
+import os
+
 import tkinter as tk
 from tkinter import ttk, font as tkfont
 
@@ -85,23 +87,62 @@ class AboutMixin:
         header_row = tk.Frame(center, bg=p["BG"])
         header_row.pack(fill=tk.X, pady=(0, 20))
 
-        back_font = tkfont.Font(family=_ui, size=18)
-        tk.Button(
-            header_row,
-            text="<-",
-            font=back_font,
-            bg=p["BG"],
-            fg=p["TEXT_DIM"],
-            activebackground=p["BG"],
-            activeforeground=p["TEXT_BRIGHT"],
-            bd=0,
-            cursor="hand2",
-            command=self.close_about_page,
-        ).pack(side=tk.LEFT)
+        back_icon = getattr(self, "_back_icon_photo", None)
+        if back_icon is None:
+            try:
+                icon_path = os.path.normpath(
+                    os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)),
+                        "..",
+                        "assets",
+                        "back.png",
+                    )
+                )
+                if os.path.exists(icon_path):
+                    back_icon = tk.PhotoImage(file=icon_path)
+                    # Keep the icon compact in dense header rows.
+                    target_px = 22
+                    scale = max(1, int(max(
+                        back_icon.width() / target_px,
+                        back_icon.height() / target_px,
+                    )))
+                    if scale > 1:
+                        back_icon = back_icon.subsample(scale, scale)
+                    self._back_icon_photo = back_icon
+            except Exception:
+                back_icon = None
+
+        if back_icon is not None:
+            tk.Button(
+                header_row,
+                image=back_icon,
+                bg=p["BG"],
+                activebackground=p["BG"],
+                bd=0,
+                highlightthickness=0,
+                padx=2,
+                pady=2,
+                cursor="hand2",
+                command=self.close_about_page,
+            ).pack(side=tk.LEFT)
+        else:
+            back_font = tkfont.Font(family=_ui, size=18)
+            tk.Button(
+                header_row,
+                text="←",
+                font=back_font,
+                bg=p["BG"],
+                fg=p["TEXT_DIM"],
+                activebackground=p["BG"],
+                activeforeground=p["TEXT_BRIGHT"],
+                bd=0,
+                cursor="hand2",
+                command=self.close_about_page,
+            ).pack(side=tk.LEFT)
 
         tk.Label(
             header_row,
-            text="DualSolver Help and About",
+            text="Help and About",
             font=title_font,
             bg=p["BG"],
             fg=p["TEXT_BRIGHT"],
