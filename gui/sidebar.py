@@ -46,7 +46,15 @@ class Sidebar:
         self._backdrop = tk.Frame(app, bg="#000000")
 
         # ── Sidebar panel — overlays on top using place() ────────────────
-        self._panel = tk.Frame(app, width=_SIDEBAR_W, bg="#060810")
+        self._panel = tk.Frame(
+            app,
+            width=_SIDEBAR_W,
+            bg="#060810",
+            bd=0,
+            highlightthickness=2,
+            highlightbackground="#ffffff",
+            highlightcolor="#ffffff",
+        )
         self._panel.place_forget()
         self._panel.pack_propagate(False)
 
@@ -118,7 +126,11 @@ class Sidebar:
 
     def _apply_colours(self) -> None:
         c = self.c
-        self._panel.configure(bg=c["bg"])
+        self._panel.configure(
+            bg=c["bg"],
+            highlightbackground="#ffffff",
+            highlightcolor="#ffffff",
+        )
         self._canvas.configure(bg=c["bg"])
         self._inner.configure(bg=c["bg"])
         self._update_sidebar_scrollbar_style()
@@ -469,10 +481,10 @@ class Sidebar:
 
         popup = tk.Toplevel(self.app)
         popup.overrideredirect(True)
-        popup.configure(bg=c["border"])
+        popup.configure(bg=c["card"])
         self._popup_menu = popup
 
-        inner_frame = tk.Frame(popup, bg=c["card"], padx=1, pady=1)
+        inner_frame = tk.Frame(popup, bg=c["card"], padx=0, pady=0)
         inner_frame.pack(fill=tk.BOTH, expand=True)
 
         is_pinned = rec.get("pinned", False)

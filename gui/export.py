@@ -18,6 +18,11 @@ from gui import themes
 class ExportMixin:
     """Mixed into DualSolverApp — adds copy and file export actions."""
 
+    def _notify_export_success(self, fmt: str) -> None:
+        """Show a non-blocking success notice after file export."""
+        if hasattr(self, "_show_toast"):
+            self._show_toast(f"{fmt} exported!", icon="✓", kind="success")
+
     # ── Fraction normaliser (used by plain text and PDF) ───────────────
 
     @staticmethod
@@ -443,6 +448,8 @@ class ExportMixin:
                 f.write(html_text)
         except OSError as exc:
             messagebox.showerror("Export error", f"Could not save HTML:\n{exc}")
+        else:
+            self._notify_export_success("HTML")
 
     # ── PDF export ─────────────────────────────────────────────────────
 
@@ -638,6 +645,8 @@ class ExportMixin:
             pdf.output(path)
         except Exception as exc:
             messagebox.showerror("Export error", f"Could not save PDF:\n{exc}")
+        else:
+            self._notify_export_success("PDF")
         finally:
             if graph_img_path:
                 try:

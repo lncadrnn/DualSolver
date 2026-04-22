@@ -120,7 +120,7 @@ class DualSolverApp(
         self._header_title_font = tkfont.Font(family=self._ui_family, size=18, weight="bold")
         self._header_title = tk.Label(
             self._header, text="DualSolver", font=self._header_title_font,
-            bg=themes.HEADER_BG, fg=themes.TEXT_DIM,
+            bg=themes.HEADER_BG, fg=themes.TEXT_BRIGHT,
         )
         self._header_title.pack(side=tk.LEFT, padx=(6, 20))
 
@@ -351,7 +351,7 @@ class DualSolverApp(
         except Exception as e:
             print(f"Could not load logo: {e}")
             return tk.Label(self._header, text="DualSolver", font=self._title,
-                            bg=themes.HEADER_BG, fg=themes.ACCENT)
+                            bg=themes.HEADER_BG, fg=themes.TEXT_BRIGHT)
 
     def _toggle_sidebar(self) -> None:
         self._sidebar.toggle()
