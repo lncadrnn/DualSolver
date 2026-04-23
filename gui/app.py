@@ -13,6 +13,7 @@ import threading
 
 from solver import solve_linear_equation
 from gui.sidebar import Sidebar
+from gui.error_messages import format_educational_error
 
 # ── Theme data (palettes, mutable colour shortcuts) ────────────────────────
 from gui import themes
@@ -783,22 +784,7 @@ class DualSolverApp(
 
     @staticmethod
     def _friendly_error(equation: str, exc: Exception) -> str:
-        msg = str(exc)
-        if isinstance(exc, ValueError):
-            if "Could not parse" in msg or "invalid syntax" in msg.lower():
-                return (
-                    f'Could not understand "{equation}".\n\n'
-                    "Make sure your equation uses standard math notation.\n"
-                    "Examples:  2x + 3 = 7  \u2022  as = 1  \u2022  x + y = 10, x - y = 2"
-                )
-            return msg
-        return (
-            f'DualSolver could not process "{equation}".\n\n'
-            "Supports linear equations with one or more variables,\n"
-            "and systems separated by commas or semicolons.\n"
-            "Examples:  2x + 3 = 7  \u2022  2x + 4y = 1  \u2022  x+y=10, x-y=2\n\n"
-            f"Details: {msg}"
-        )
+        return format_educational_error(equation, exc)
 
     def _stop_solving(self) -> None:
         self._anim_queue = []

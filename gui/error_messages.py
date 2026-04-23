@@ -52,13 +52,15 @@ def format_educational_error(equation: str, exc: Exception) -> str:
 
     if "must contain '=" in msg_l and "equation" in msg_l:
         return (
-            "This looks like an expression, not an equation yet.\n\n"
+            "What you entered is an expression, not an equation yet.\n\n"
             f'You entered: "{entered}"\n\n'
-            "A linear equation compares two sides with '='.\n"
-            "Without '=', there is no equality to solve.\n\n"
+            "For it to become an equation, it must equate one side to another.\n"
+            "A linear equation compares two sides using '='.\n"
+            "Without '=', there is no equality relationship to solve.\n\n"
             "How to fix it:\n"
             "- Add exactly one '=' sign.\n"
-            "- Put an expression on both sides.\n"
+            "- Put an expression on both sides of '='.\n"
+            "- If one side is blank, complete it (for example: x + 2 = 5).\n"
             "- Example: 2x + 3 = 7"
         )
 
