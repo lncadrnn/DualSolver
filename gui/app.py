@@ -346,6 +346,12 @@ class DualSolverApp(
             h = 48
             w = int(h * img.width / img.height)
             img = img.resize((w, h), Image.Resampling.LANCZOS)
+            # Keep original transparency but render the glyph in white.
+            img = img.convert("RGBA")
+            alpha = img.split()[-1]
+            white_icon = Image.new("RGBA", img.size, (255, 255, 255, 255))
+            white_icon.putalpha(alpha)
+            img = white_icon
             self._logo_photo = ImageTk.PhotoImage(img)
             return tk.Label(self._header, image=self._logo_photo,
                             bg=themes.HEADER_BG)
