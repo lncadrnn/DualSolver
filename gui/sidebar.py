@@ -297,7 +297,7 @@ class Sidebar:
             from gui import themes
             path = themes.logo_path()
             img = Image.open(path)
-            h = 52
+            h = 40
             w = int(h * img.width / img.height)
             img = img.resize((w, h), Image.Resampling.LANCZOS)
             self._sidebar_logo_photo = ImageTk.PhotoImage(img)

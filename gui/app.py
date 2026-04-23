@@ -447,7 +447,7 @@ class DualSolverApp(
             if not os.path.exists(path):
                 raise FileNotFoundError(path)
             img = Image.open(path)
-            h = 44
+            h = 34
             w = int(h * img.width / img.height)
             img = img.resize((w, h), Image.Resampling.LANCZOS)
             self._logo_photo = ImageTk.PhotoImage(img)
