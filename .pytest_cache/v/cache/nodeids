@@ -53,5 +53,6 @@
   "tests/test_storage_unit.py::test_settings_get_and_save",
   "tests/test_storage_unit.py::test_touch_history_updates_timestamp_and_reorders",
   "tests/test_themes_unit.py::test_apply_theme_updates_module_globals",
-  "tests/test_themes_unit.py::test_palette_returns_expected_dict"
+  "tests/test_themes_unit.py::test_palette_returns_expected_dict",
+  "tests/test_themes_unit.py::test_theme_aliases_and_palette_metadata"
 ]

@@ -233,6 +233,106 @@ class SettingsMixin:
             highlightthickness=0, bd=0, cursor="hand2",
         ).pack(anchor="w")
 
+        # Divider
+        tk.Frame(card, bg=p["TEXT_DIM"], height=1).pack(fill=tk.X, pady=(12, 12))
+
+        # ── Color Theme ────────────────────────────────────────────
+        tk.Label(card, text="Color Theme", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 6))
+        tk.Label(card,
+                 text="Pick a palette accent. This applies app-wide when you save.",
+                 font=small_font, bg=p["STEP_BG"], fg=p["TEXT_DIM"]
+                 ).pack(anchor="w", pady=(0, 10))
+
+        theme_var = tk.StringVar(
+            value=themes.normalize_theme(settings.get("theme", "dark"))
+        )
+        theme_choices = themes.available_themes()
+
+        palette_grid = tk.Frame(card, bg=p["STEP_BG"])
+        palette_grid.pack(fill=tk.X, pady=(0, 4))
+
+        swatch_label_font = tkfont.Font(family=_ui, size=10, weight="bold")
+        swatch_mark_font = tkfont.Font(family=_ui, size=11, weight="bold")
+        swatches = {}
+
+        def _set_theme_choice(theme_id: str) -> None:
+            theme_var.set(theme_id)
+            _refresh_theme_palette()
+
+        def _refresh_theme_palette() -> None:
+            selected = theme_var.get()
+            for theme_id, data in swatches.items():
+                canvas = data["canvas"]
+                ring = data["ring"]
+                mark = data["mark"]
+                label = data["label"]
+                if theme_id == selected:
+                    canvas.itemconfigure(ring, outline=p["TEXT_BRIGHT"], width=3)
+                    canvas.itemconfigure(mark, state="normal")
+                    label.configure(fg=p["TEXT_BRIGHT"])
+                else:
+                    canvas.itemconfigure(ring, outline=p["STEP_BORDER"], width=2)
+                    canvas.itemconfigure(mark, state="hidden")
+                    label.configure(fg=p["TEXT_DIM"])
+
+        columns = 3
+        for col in range(columns):
+            palette_grid.grid_columnconfigure(col, weight=1)
+
+        for idx, item in enumerate(theme_choices):
+            theme_id = item["id"]
+            swatch_wrap = tk.Frame(palette_grid, bg=p["STEP_BG"], padx=8, pady=4)
+            swatch_wrap.grid(row=idx // columns, column=idx % columns, sticky="w")
+
+            swatch = tk.Canvas(
+                swatch_wrap,
+                width=44,
+                height=44,
+                bg=p["STEP_BG"],
+                highlightthickness=0,
+                bd=0,
+                cursor="hand2",
+            )
+            swatch.pack(anchor="w")
+
+            ring_id = swatch.create_oval(
+                4, 4, 40, 40,
+                fill=item["accent"],
+                outline=p["STEP_BORDER"],
+                width=2,
+            )
+            swatch.create_oval(14, 14, 30, 30, fill=p["BG_DARKER"], outline="")
+            mark_id = swatch.create_text(
+                22, 22,
+                text="✓",
+                fill=item.get("accent_text", "#ffffff"),
+                font=swatch_mark_font,
+                state="hidden",
+            )
+
+            swatch_label = tk.Label(
+                swatch_wrap,
+                text=item["label"],
+                font=swatch_label_font,
+                bg=p["STEP_BG"],
+                fg=p["TEXT_DIM"],
+            )
+            swatch_label.pack(anchor="w", pady=(4, 0))
+
+            swatches[theme_id] = {
+                "canvas": swatch,
+                "ring": ring_id,
+                "mark": mark_id,
+                "label": swatch_label,
+            }
+
+            for widget in (swatch_wrap, swatch, swatch_label):
+                widget.bind("<Button-1>",
+                            lambda _e, t=theme_id: _set_theme_choice(t))
+
+        _refresh_theme_palette()
+
         # ── Save button + message ──────────────────────────────────
         bottom = tk.Frame(card, bg=p["STEP_BG"])
         bottom.pack(fill=tk.X, pady=(20, 0))
@@ -243,20 +343,28 @@ class SettingsMixin:
 
         def _save():
             new_settings = {
-                "theme": "dark",
+                "theme": themes.normalize_theme(theme_var.get()),
                 "animation_speed": speed_var.get(),
                 "show_verification": verify_var.get(),
                 "show_graph": graph_var.get(),
             }
             save_settings(new_settings)
             self._sidebar._apply_settings_to_app(new_settings)
+
+            if hasattr(self, "_settings_canvas") and self._settings_canvas.winfo_exists():
+                try:
+                    self._settings_scroll_pos = self._settings_canvas.yview()[0]
+                except Exception:
+                    self._settings_scroll_pos = 0.0
+
+            self._rebuild_settings_with_scroll()
             self._show_toast("Settings saved!")
 
         save_font = tkfont.Font(family=_ui, size=14, weight="bold")
         tk.Button(bottom, text="Save Settings", font=save_font,
-                  bg=p["ACCENT"], fg="#ffffff",
+                  bg=p["ACCENT"], fg=p["ACCENT_TEXT"],
                   activebackground=p["ACCENT_HOVER"],
-                  activeforeground="#ffffff",
+                  activeforeground=p["ACCENT_TEXT"],
                   bd=0, padx=24, pady=10, cursor="hand2",
                   command=_save).pack(fill=tk.X)
 
@@ -402,9 +510,9 @@ class SettingsMixin:
                 text=btn_text,
                 font=btn_font,
                 bg=p["ERROR"] if danger else p["ACCENT"],
-                fg="#ffffff",
+                fg="#ffffff" if danger else p["ACCENT_TEXT"],
                 activebackground="#cc0000" if danger else p["ACCENT_HOVER"],
-                activeforeground="#ffffff",
+                activeforeground="#ffffff" if danger else p["ACCENT_TEXT"],
                 bd=0,
                 padx=16,
                 pady=7,

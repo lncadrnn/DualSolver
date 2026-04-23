@@ -99,8 +99,8 @@ class Sidebar:
     # ── Colour helpers ──────────────────────────────────────────────────
 
     def _build_colours(self) -> None:
-        from gui.themes import DARK_PALETTE
-        p = DARK_PALETTE
+        from gui import themes
+        p = themes.palette(getattr(self.app, "_theme", "dark"))
         self.c = {
             "bg":       p["BG_DARKER"],
             "bg2":      p["BG"],
@@ -137,8 +137,8 @@ class Sidebar:
 
     def _update_sidebar_scrollbar_style(self) -> None:
         """Style the sidebar scrollbar."""
-        from gui.themes import DARK_PALETTE
-        p = DARK_PALETTE
+        from gui import themes
+        p = themes.palette(getattr(self.app, "_theme", "dark"))
         bg  = p["BG_DARKER"]
         sbg = p["SCROLLBAR_BG"]
         sac = p["SCROLLBAR_ACT"]
@@ -294,10 +294,8 @@ class Sidebar:
         try:
             import os
             from PIL import Image, ImageTk
-            base = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "..", "assets")
-            fname = "darkmode-logo.png"
-            path = os.path.normpath(os.path.join(base, fname))
+            from gui import themes
+            path = themes.logo_path()
             img = Image.open(path)
             h = 56
             w = int(h * img.width / img.height)
@@ -706,6 +704,15 @@ class Sidebar:
         self._apply_settings_to_app(settings)
 
     def _apply_settings_to_app(self, settings: dict) -> None:
+        from gui import themes
+
+        # Theme
+        theme_name = themes.normalize_theme(settings.get("theme", "dark"))
+        self.app._theme = theme_name
+        themes.apply_theme(theme_name)
+        if hasattr(self.app, "_apply_theme_to_ui"):
+            self.app._apply_theme_to_ui()
+
         # Animation speed
         speed = settings.get("animation_speed", "normal")
         speed_map = {"slow": 24, "normal": 12, "fast": 4, "instant": 0}

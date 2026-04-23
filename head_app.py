@@ -335,10 +335,7 @@ class DualSolverApp(
     def _load_header_logo(self):
         try:
             from PIL import Image, ImageTk
-            base = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "..", "assets")
-            fname = "darkmode-logo.png"
-            path = os.path.normpath(os.path.join(base, fname))
+            path = themes.logo_path()
             if not os.path.exists(path):
                 raise FileNotFoundError(path)
             img = Image.open(path)

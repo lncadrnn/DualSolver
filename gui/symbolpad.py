@@ -75,7 +75,7 @@ class SymbolPadMixin:
                 b = tk.Button(
                     row, text=display, font=btn_font, width=5,
                     bg=p["STEP_BG"], fg=p["TEXT_BRIGHT"],
-                    activebackground=p["ACCENT"], activeforeground="#ffffff",
+                    activebackground=p["ACCENT"], activeforeground=p["ACCENT_TEXT"],
                     bd=0, padx=4, pady=4, cursor="hand2", relief=tk.FLAT,
                     command=lambda t=insert_text: self._insert_symbol(t),
                 )
