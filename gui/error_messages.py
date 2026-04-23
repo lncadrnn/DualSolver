@@ -12,6 +12,18 @@ def format_educational_error(equation: str, exc: Exception) -> str:
     entered = equation.strip() or equation
 
     if "invalid character(s):" in msg_l:
+        if any(sym in msg for sym in ("<", ">", "≤", "≥")):
+            return (
+                "This input uses an inequality symbol, not an equation symbol.\n\n"
+                f'You entered: "{entered}"\n\n'
+                "DualSolver solves equations, which must use '=' to compare\n"
+                "left and right sides. Symbols like <, >, ≤, and ≥ are\n"
+                "inequalities and are outside the current solver scope.\n\n"
+                "How to fix it:\n"
+                "- Replace inequality symbols with '=' when appropriate.\n"
+                "- Keep exactly one '=' per equation.\n"
+                "- Example: 2x + 3 = 7"
+            )
         return (
             "Some characters in your input are not valid math symbols.\n\n"
             f'You entered: "{entered}"\n\n'
@@ -90,7 +102,9 @@ def format_educational_error(equation: str, exc: Exception) -> str:
         return (
             "A solvable linear equation needs at least one variable letter.\n\n"
             f'You entered: "{entered}"\n\n'
-            "Numbers alone are constants, not unknowns to solve for.\n\n"
+            "Numbers alone are constants, not unknowns to solve for.\n"
+            "A constants-only statement may be true or false, but it does not\n"
+            "ask for a variable value.\n\n"
             "How to fix it:\n"
             "- Include a variable like x, y, or z.\n"
             "- Example: 2x + 3 = 7"
@@ -150,6 +164,17 @@ def format_educational_error(equation: str, exc: Exception) -> str:
         )
 
     if "could not parse expression" in msg_l or "invalid syntax" in msg_l:
+        if any(key in msg_l for key in (
+            "eof", "never closed", "unmatched", "parenthesis", "expected ')'"
+        )):
+            return (
+                "The equation syntax looks incomplete because parentheses are not balanced.\n\n"
+                f'You entered: "{entered}"\n\n'
+                "How to fix it:\n"
+                "- Make sure every opening '(' has a closing ')'.\n"
+                "- Complete any unfinished term before or after parentheses.\n"
+                "- Example: 2(x + 3) = 14"
+            )
         return (
             "Part of the equation could not be parsed as valid math syntax.\n\n"
             f'You entered: "{entered}"\n\n'
@@ -174,6 +199,18 @@ def format_educational_error(equation: str, exc: Exception) -> str:
         )
 
     if "could not solve system numerically" in msg_l:
+        if "singular matrix" in msg_l:
+            return (
+                "The numerical system has no unique solution (singular matrix).\n\n"
+                f'You entered: "{entered}"\n\n'
+                "This usually means at least one equation is a multiple of another\n"
+                "(dependent system) or the system is inconsistent.\n\n"
+                "How to fix it:\n"
+                "- Check whether equations are duplicates or scalar multiples.\n"
+                "- Add or correct equations so each adds independent information.\n"
+                "- Try symbolic mode to see whether solutions are infinite or none.\n"
+                "- Example independent system: x + y = 10, x - y = 2"
+            )
         return (
             "The numerical solver could not compute this system as entered.\n\n"
             f'You entered: "{entered}"\n\n'
