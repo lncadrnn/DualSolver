@@ -52,7 +52,7 @@ OCEAN_PALETTE = dict(
     # --- Accent ---
     ACCENT       = "#0096C7",     # primary accent (ocean cyan)
     ACCENT_HOVER = "#00B4D8",     # lighter hover / glow variant
-    ACCENT_TEXT  = "#ffffff",     # text/icon color placed on ACCENT
+    ACCENT_TEXT  = "#ffffff",     # text rendered on accent backgrounds
 
     # --- Typography ---
     TEXT         = "#b8c0d8",     # main body text (soft blue-white)
@@ -108,7 +108,7 @@ EMERALD_PALETTE = dict(
     HEADER_BG    = "#0b1711",
     ACCENT       = "#22c55e",
     ACCENT_HOVER = "#4ade80",
-    ACCENT_TEXT  = "#05210f",
+    ACCENT_TEXT  = "#ffffff",
     TEXT         = "#b9d8c8",
     TEXT_DIM     = "#7ba08e",
     TEXT_BRIGHT  = "#e6f4ec",
@@ -132,7 +132,7 @@ SUNSET_PALETTE = dict(
     HEADER_BG    = "#1a1209",
     ACCENT       = "#f97316",
     ACCENT_HOVER = "#fb923c",
-    ACCENT_TEXT  = "#2b1300",
+    ACCENT_TEXT  = "#ffffff",
     TEXT         = "#e0c8b4",
     TEXT_DIM     = "#aa8b73",
     TEXT_BRIGHT  = "#faeee5",
@@ -263,7 +263,6 @@ def available_themes() -> list[dict]:
             "id": key,
             "label": THEME_LABELS.get(key, key.title()),
             "accent": p["ACCENT"],
-            "accent_text": p["ACCENT_TEXT"],
         })
     return themes_list
 

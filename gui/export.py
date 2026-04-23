@@ -138,6 +138,7 @@ class ExportMixin:
     def _add_export_bar(self, parent: tk.Frame, result: dict) -> None:
         """Add a copy/save action bar at the bottom of the bot message."""
         p = themes.palette(self._theme)
+        accent_text = p.get("ACCENT_TEXT", "#ffffff")
         bar = tk.Frame(parent, bg=p["BOT_BG"])
         bar.pack(fill=tk.X, pady=(12, 0))
 
@@ -146,7 +147,7 @@ class ExportMixin:
         copy_btn = tk.Button(
             bar, text="📋 Copy to Clipboard", font=btn_font,
             bg=p["STEP_BG"], fg=p["TEXT_BRIGHT"],
-            activebackground=p["ACCENT"], activeforeground="#ffffff",
+            activebackground=p["ACCENT"], activeforeground=accent_text,
             bd=0, padx=14, pady=6, cursor="hand2", relief=tk.FLAT,
             command=lambda: self._copy_to_clipboard(result, copy_btn),
         )
@@ -155,7 +156,7 @@ class ExportMixin:
         export_btn = tk.Button(
             bar, text="⬇ Export", font=btn_font,
             bg=p["STEP_BG"], fg=p["TEXT_BRIGHT"],
-            activebackground=p["ACCENT"], activeforeground="#ffffff",
+            activebackground=p["ACCENT"], activeforeground=accent_text,
             bd=0, padx=14, pady=6, cursor="hand2", relief=tk.FLAT,
             command=lambda: self._show_export_menu(export_btn, result),
         )
@@ -164,13 +165,14 @@ class ExportMixin:
     def _show_export_menu(self, anchor_btn: tk.Button, result: dict) -> None:
         """Open export format options (PDF/HTML) under the export button."""
         p = themes.palette(self._theme)
+        accent_text = p.get("ACCENT_TEXT", "#ffffff")
         menu = tk.Menu(
             self,
             tearoff=0,
             bg=p["STEP_BG"],
             fg=p["TEXT_BRIGHT"],
             activebackground=p["ACCENT"],
-            activeforeground="#ffffff",
+            activeforeground=accent_text,
             bd=0,
         )
         menu.add_command(label="Save as PDF", command=lambda: self._save_as_pdf(result))

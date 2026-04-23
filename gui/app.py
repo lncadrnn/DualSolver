@@ -336,6 +336,7 @@ class DualSolverApp(
     def _apply_theme_to_ui(self) -> None:
         """Apply the current theme to the live UI shell/widgets."""
         p = themes.palette(self._theme)
+        accent_text = p.get("ACCENT_TEXT", "#ffffff")
         themes.apply_theme(self._theme)
 
         self.configure(bg=p["BG"])
@@ -363,9 +364,9 @@ class DualSolverApp(
         if hasattr(self, "_new_btn"):
             self._new_btn.configure_colors(
                 bg=p["ACCENT"],
-                fg=p["ACCENT_TEXT"],
+                fg=accent_text,
                 hover_bg=p["ACCENT_HOVER"],
-                hover_fg=p["ACCENT_TEXT"],
+                hover_fg=accent_text,
                 parent_bg=p["HEADER_BG"],
             )
 
@@ -405,9 +406,9 @@ class DualSolverApp(
         if hasattr(self, "_send_btn"):
             self._send_btn.configure_colors(
                 bg=p["ACCENT"],
-                fg=p["ACCENT_TEXT"],
+                fg=accent_text,
                 hover_bg=p["ACCENT_HOVER"],
-                hover_fg=p["ACCENT_TEXT"],
+                hover_fg=accent_text,
                 parent_bg=p["INPUT_BG"],
             )
         if hasattr(self, "_stop_btn"):
@@ -465,6 +466,7 @@ class DualSolverApp(
     # ── Welcome screen ──────────────────────────────────────────────────
 
     def _show_welcome(self) -> None:
+        p = themes.palette(self._theme)
         self._welcome_frame = tk.Frame(self._chat_frame, bg=themes.BG)
         self._welcome_frame.pack(fill=tk.BOTH, expand=True, pady=(100, 50))
 
@@ -493,7 +495,7 @@ class DualSolverApp(
             btn = RoundedButton(
                 self._welcome_frame, text=eq, font=self._mono,
                 bg=themes.STEP_BG, fg=themes.ACCENT,
-                hover_bg=themes.ACCENT, hover_fg=themes.ACCENT_TEXT,
+                hover_bg=themes.ACCENT, hover_fg=p.get("ACCENT_TEXT", "#ffffff"),
                 corner_radius=themes.CORNER_RADIUS_SM,
                 padx=24, pady=10,
                 command=lambda e=eq: self._use_example(e),
@@ -511,6 +513,7 @@ class DualSolverApp(
     def _show_solve_mode_modal(self, equation: str) -> None:
         """Show a centred modal asking the user to pick symbolic or numerical."""
         p = themes.palette(self._theme)
+        accent_text = p.get("ACCENT_TEXT", "#ffffff")
 
         # Backdrop (dim overlay)
         backdrop = tk.Frame(self, bg="#000000")
@@ -612,9 +615,9 @@ class DualSolverApp(
             sym_toggle_border.pack(side=tk.LEFT, padx=(0, 4))
             sym_toggle = tk.Button(sym_toggle_border, text="📐 Symbolic",
                                    font=toggle_btn_font,
-                                   bg=p["ACCENT"], fg=p["ACCENT_TEXT"],
+                                   bg=p["ACCENT"], fg=accent_text,
                                    activebackground=p["ACCENT_HOVER"],
-                                   activeforeground=p["ACCENT_TEXT"],
+                                   activeforeground=accent_text,
                                    bd=0, padx=12, pady=4, cursor="hand2",
                                    relief=tk.FLAT,
                                    highlightthickness=0)
@@ -638,18 +641,18 @@ class DualSolverApp(
                 if mode_val == "symbolic":
                     sym_toggle_border.configure(bg=p["STEP_BG"])
                     num_toggle_border.configure(bg=p["STEP_BORDER"])
-                    sym_toggle.configure(bg=p["ACCENT"], fg=p["ACCENT_TEXT"],
+                    sym_toggle.configure(bg=p["ACCENT"], fg=accent_text,
                                          activebackground=p["ACCENT_HOVER"],
-                                         activeforeground=p["ACCENT_TEXT"])
+                                         activeforeground=accent_text)
                     num_toggle.configure(bg=p["STEP_BG"], fg=p["TEXT_DIM"],
                                          activebackground=p["STEP_BG"],
                                          activeforeground=p["TEXT_BRIGHT"])
                 else:
                     num_toggle_border.configure(bg=p["STEP_BG"])
                     sym_toggle_border.configure(bg=p["STEP_BORDER"])
-                    num_toggle.configure(bg=p["ACCENT"], fg=p["ACCENT_TEXT"],
+                    num_toggle.configure(bg=p["ACCENT"], fg=accent_text,
                                          activebackground=p["ACCENT_HOVER"],
-                                         activeforeground=p["ACCENT_TEXT"])
+                                         activeforeground=accent_text)
                     sym_toggle.configure(bg=p["STEP_BG"], fg=p["TEXT_DIM"],
                                          activebackground=p["STEP_BG"],
                                          activeforeground=p["TEXT_BRIGHT"])
@@ -684,9 +687,9 @@ class DualSolverApp(
 
             check_btn = tk.Button(
                 btn_row, text="Check ➤", font=btn_font,
-                bg=p["ACCENT"], fg=p["ACCENT_TEXT"],
+                bg=p["ACCENT"], fg=accent_text,
                 activebackground=p["ACCENT_HOVER"],
-                activeforeground=p["ACCENT_TEXT"],
+                activeforeground=accent_text,
                 bd=0, padx=14, pady=6, width=action_btn_width,
                 cursor="hand2",
                 command=_submit_substitution,
@@ -760,9 +763,9 @@ class DualSolverApp(
             def _on_enter(_evt):
                 for w in all_widgets:
                     w.configure(bg=p["ACCENT"])
-                icon_lbl.configure(fg=p["ACCENT_TEXT"])
-                title_lbl.configure(fg=p["ACCENT_TEXT"])
-                sub_lbl.configure(fg=p["ACCENT_TEXT"])
+                icon_lbl.configure(fg="#ffffff")
+                title_lbl.configure(fg="#ffffff")
+                sub_lbl.configure(fg="#ffffff")
 
             def _on_leave(_evt):
                 for w in all_widgets:

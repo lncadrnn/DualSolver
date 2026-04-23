@@ -31,6 +31,7 @@ class SettingsMixin:
             self._new_btn.pack_forget()
 
         p = themes.palette(self._theme)
+        accent_text = p.get("ACCENT_TEXT", "#ffffff")
 
         # Clean up any stale confirm overlays from a previous render.
         if hasattr(self, '_settings_confirm_modal'):
@@ -306,7 +307,7 @@ class SettingsMixin:
             mark_id = swatch.create_text(
                 22, 22,
                 text="✓",
-                fill=item.get("accent_text", "#ffffff"),
+                fill="#ffffff",
                 font=swatch_mark_font,
                 state="hidden",
             )
@@ -362,9 +363,9 @@ class SettingsMixin:
 
         save_font = tkfont.Font(family=_ui, size=14, weight="bold")
         tk.Button(bottom, text="Save Settings", font=save_font,
-                  bg=p["ACCENT"], fg=p["ACCENT_TEXT"],
+                  bg=p["ACCENT"], fg=accent_text,
                   activebackground=p["ACCENT_HOVER"],
-                  activeforeground=p["ACCENT_TEXT"],
+                  activeforeground=accent_text,
                   bd=0, padx=24, pady=10, cursor="hand2",
                   command=_save).pack(fill=tk.X)
 
@@ -510,9 +511,9 @@ class SettingsMixin:
                 text=btn_text,
                 font=btn_font,
                 bg=p["ERROR"] if danger else p["ACCENT"],
-                fg="#ffffff" if danger else p["ACCENT_TEXT"],
+                fg="#ffffff" if danger else accent_text,
                 activebackground="#cc0000" if danger else p["ACCENT_HOVER"],
-                activeforeground="#ffffff" if danger else p["ACCENT_TEXT"],
+                activeforeground="#ffffff" if danger else accent_text,
                 bd=0,
                 padx=16,
                 pady=7,

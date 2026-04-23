@@ -53,6 +53,7 @@ class SymbolPadMixin:
 
     def _show_symbol_pad(self) -> None:
         p = themes.palette(self._theme)
+        accent_text = p.get("ACCENT_TEXT", "#ffffff")
         pad = tk.Toplevel(self)
         pad.overrideredirect(True)
         pad.configure(bg=p["STEP_BORDER"])
@@ -75,7 +76,7 @@ class SymbolPadMixin:
                 b = tk.Button(
                     row, text=display, font=btn_font, width=5,
                     bg=p["STEP_BG"], fg=p["TEXT_BRIGHT"],
-                    activebackground=p["ACCENT"], activeforeground=p["ACCENT_TEXT"],
+                    activebackground=p["ACCENT"], activeforeground=accent_text,
                     bd=0, padx=4, pady=4, cursor="hand2", relief=tk.FLAT,
                     command=lambda t=insert_text: self._insert_symbol(t),
                 )
