@@ -13,7 +13,6 @@ import threading
 
 from solver import solve_linear_equation
 from gui.sidebar import Sidebar
-from gui.error_messages import format_educational_error
 
 # ── Theme data (palettes, mutable colour shortcuts) ────────────────────────
 from gui import themes
@@ -128,8 +127,8 @@ class DualSolverApp(
         self._small_bold = tkfont.Font(family=self._ui_family, size=12, weight="bold")
         self._new_btn = RoundedButton(
             self._header, text="+ New Chat", font=self._small_bold,
-            bg=themes.ACCENT, fg=themes.ACCENT_TEXT,
-            hover_bg=themes.ACCENT_HOVER, hover_fg=themes.ACCENT_TEXT,
+            bg=themes.ACCENT, fg="#ffffff",
+            hover_bg=themes.ACCENT_HOVER, hover_fg="#ffffff",
             corner_radius=themes.CORNER_RADIUS_BTN,
             padx=18, pady=7,
             command=self._clear_chat,
@@ -216,8 +215,8 @@ class DualSolverApp(
 
         self._send_btn = RoundedButton(
             self._action_frame, text="Solve ➤", font=self._bold,
-            bg=themes.ACCENT, fg=themes.ACCENT_TEXT,
-            hover_bg=themes.ACCENT_HOVER, hover_fg=themes.ACCENT_TEXT,
+            bg=themes.ACCENT, fg=themes.TEXT_BRIGHT,
+            hover_bg=themes.ACCENT_HOVER, hover_fg=themes.TEXT_BRIGHT,
             corner_radius=themes.CORNER_RADIUS_BTN,
             padx=18, pady=6,
             command=self._on_send,
@@ -333,113 +332,6 @@ class DualSolverApp(
             })
         ])
 
-    def _apply_theme_to_ui(self) -> None:
-        """Apply the current theme to the live UI shell/widgets."""
-        p = themes.palette(self._theme)
-        accent_text = p.get("ACCENT_TEXT", "#ffffff")
-        themes.apply_theme(self._theme)
-
-        self.configure(bg=p["BG"])
-
-        if hasattr(self, "_content"):
-            self._content.configure(bg=p["BG"])
-        if hasattr(self, "_header"):
-            self._header.configure(bg=p["HEADER_BG"])
-        if hasattr(self, "_hamburger_btn"):
-            self._hamburger_btn.configure(
-                bg=p["HEADER_BG"],
-                fg=p["TEXT_BRIGHT"],
-                activebackground=p["HEADER_BG"],
-                activeforeground=p["TEXT_BRIGHT"],
-            )
-        if hasattr(self, "_header_logo"):
-            self._header_logo.configure(bg=p["HEADER_BG"])
-            try:
-                self._header_logo.configure(fg=p["TEXT_BRIGHT"])
-            except Exception:
-                pass
-        if hasattr(self, "_header_title"):
-            self._header_title.configure(bg=p["HEADER_BG"], fg=p["TEXT_BRIGHT"])
-
-        if hasattr(self, "_new_btn"):
-            self._new_btn.configure_colors(
-                bg=p["ACCENT"],
-                fg=accent_text,
-                hover_bg=p["ACCENT_HOVER"],
-                hover_fg=accent_text,
-                parent_bg=p["HEADER_BG"],
-            )
-
-        if hasattr(self, "_chat_wrapper"):
-            self._chat_wrapper.configure(bg=p["BG"])
-        if hasattr(self, "_canvas"):
-            self._canvas.configure(bg=p["BG"])
-        if hasattr(self, "_chat_frame"):
-            self._chat_frame.configure(bg=p["BG"])
-        if hasattr(self, "_input_bar"):
-            self._input_bar.configure(bg=p["BG_DARKER"])
-        if hasattr(self, "_input_rounded"):
-            self._input_rounded.update_colors(
-                bg_color=p["INPUT_BG"],
-                border_color=p["INPUT_BORDER"],
-                parent_bg=p["BG_DARKER"],
-            )
-        if hasattr(self, "_input_inner"):
-            self._input_inner.configure(bg=p["INPUT_BG"])
-        if hasattr(self, "_entry"):
-            self._entry.configure(
-                bg=p["INPUT_BG"],
-                fg=p["TEXT_BRIGHT"],
-                insertbackground=p["TEXT_BRIGHT"],
-                disabledbackground=p["INPUT_BG"],
-                disabledforeground=p["TEXT_DIM"],
-            )
-        if hasattr(self, "_clear_input_btn"):
-            self._clear_input_btn.configure(
-                bg=p["INPUT_BG"],
-                fg=p["ERROR"],
-                activebackground=p["INPUT_BG"],
-                activeforeground="#ff8a80",
-            )
-        if hasattr(self, "_action_frame"):
-            self._action_frame.configure(bg=p["INPUT_BG"])
-        if hasattr(self, "_send_btn"):
-            self._send_btn.configure_colors(
-                bg=p["ACCENT"],
-                fg=accent_text,
-                hover_bg=p["ACCENT_HOVER"],
-                hover_fg=accent_text,
-                parent_bg=p["INPUT_BG"],
-            )
-        if hasattr(self, "_stop_btn"):
-            self._stop_btn.configure(
-                bg=p["STEP_BG"],
-                fg=p["ERROR"],
-                activebackground=p["INPUT_BORDER"],
-                activeforeground=p["TEXT_BRIGHT"],
-            )
-        if hasattr(self, "_sympad_btn"):
-            self._sympad_btn.configure(
-                bg=p["INPUT_BG"],
-                fg=p["TEXT_DIM"],
-                activebackground=p["INPUT_BG"],
-                activeforeground=p["TEXT_BRIGHT"],
-            )
-
-        self._update_scrollbar_style()
-
-        if hasattr(self, "_sidebar"):
-            self._sidebar.refresh_theme()
-
-        # Repaint static welcome card if it's currently visible.
-        if hasattr(self, "_welcome_frame") and self._welcome_frame.winfo_exists():
-            self._welcome_frame.destroy()
-            self._show_welcome()
-
-        # If symbol pad is open, close it so the next open uses fresh colours.
-        if hasattr(self, "_symbol_pad_win") and self._symbol_pad_win is not None:
-            self._close_symbol_pad()
-
     def _load_header_logo(self):
         try:
             from PIL import Image, ImageTk
@@ -466,7 +358,6 @@ class DualSolverApp(
     # ── Welcome screen ──────────────────────────────────────────────────
 
     def _show_welcome(self) -> None:
-        p = themes.palette(self._theme)
         self._welcome_frame = tk.Frame(self._chat_frame, bg=themes.BG)
         self._welcome_frame.pack(fill=tk.BOTH, expand=True, pady=(100, 50))
 
@@ -495,7 +386,7 @@ class DualSolverApp(
             btn = RoundedButton(
                 self._welcome_frame, text=eq, font=self._mono,
                 bg=themes.STEP_BG, fg=themes.ACCENT,
-                hover_bg=themes.ACCENT, hover_fg=p.get("ACCENT_TEXT", "#ffffff"),
+                hover_bg=themes.ACCENT, hover_fg="#ffffff",
                 corner_radius=themes.CORNER_RADIUS_SM,
                 padx=24, pady=10,
                 command=lambda e=eq: self._use_example(e),
@@ -513,7 +404,6 @@ class DualSolverApp(
     def _show_solve_mode_modal(self, equation: str) -> None:
         """Show a centred modal asking the user to pick symbolic or numerical."""
         p = themes.palette(self._theme)
-        accent_text = p.get("ACCENT_TEXT", "#ffffff")
 
         # Backdrop (dim overlay)
         backdrop = tk.Frame(self, bg="#000000")
@@ -615,9 +505,9 @@ class DualSolverApp(
             sym_toggle_border.pack(side=tk.LEFT, padx=(0, 4))
             sym_toggle = tk.Button(sym_toggle_border, text="📐 Symbolic",
                                    font=toggle_btn_font,
-                                   bg=p["ACCENT"], fg=accent_text,
+                                   bg=p["ACCENT"], fg="#ffffff",
                                    activebackground=p["ACCENT_HOVER"],
-                                   activeforeground=accent_text,
+                                   activeforeground="#ffffff",
                                    bd=0, padx=12, pady=4, cursor="hand2",
                                    relief=tk.FLAT,
                                    highlightthickness=0)
@@ -641,18 +531,18 @@ class DualSolverApp(
                 if mode_val == "symbolic":
                     sym_toggle_border.configure(bg=p["STEP_BG"])
                     num_toggle_border.configure(bg=p["STEP_BORDER"])
-                    sym_toggle.configure(bg=p["ACCENT"], fg=accent_text,
+                    sym_toggle.configure(bg=p["ACCENT"], fg="#ffffff",
                                          activebackground=p["ACCENT_HOVER"],
-                                         activeforeground=accent_text)
+                                         activeforeground="#ffffff")
                     num_toggle.configure(bg=p["STEP_BG"], fg=p["TEXT_DIM"],
                                          activebackground=p["STEP_BG"],
                                          activeforeground=p["TEXT_BRIGHT"])
                 else:
                     num_toggle_border.configure(bg=p["STEP_BG"])
                     sym_toggle_border.configure(bg=p["STEP_BORDER"])
-                    num_toggle.configure(bg=p["ACCENT"], fg=accent_text,
+                    num_toggle.configure(bg=p["ACCENT"], fg="#ffffff",
                                          activebackground=p["ACCENT_HOVER"],
-                                         activeforeground=accent_text)
+                                         activeforeground="#ffffff")
                     sym_toggle.configure(bg=p["STEP_BG"], fg=p["TEXT_DIM"],
                                          activebackground=p["STEP_BG"],
                                          activeforeground=p["TEXT_BRIGHT"])
@@ -687,9 +577,9 @@ class DualSolverApp(
 
             check_btn = tk.Button(
                 btn_row, text="Check ➤", font=btn_font,
-                bg=p["ACCENT"], fg=accent_text,
+                bg=p["ACCENT"], fg="#ffffff",
                 activebackground=p["ACCENT_HOVER"],
-                activeforeground=accent_text,
+                activeforeground="#ffffff",
                 bd=0, padx=14, pady=6, width=action_btn_width,
                 cursor="hand2",
                 command=_submit_substitution,
@@ -890,7 +780,22 @@ class DualSolverApp(
 
     @staticmethod
     def _friendly_error(equation: str, exc: Exception) -> str:
-        return format_educational_error(equation, exc)
+        msg = str(exc)
+        if isinstance(exc, ValueError):
+            if "Could not parse" in msg or "invalid syntax" in msg.lower():
+                return (
+                    f'Could not understand "{equation}".\n\n'
+                    "Make sure your equation uses standard math notation.\n"
+                    "Examples:  2x + 3 = 7  \u2022  as = 1  \u2022  x + y = 10, x - y = 2"
+                )
+            return msg
+        return (
+            f'DualSolver could not process "{equation}".\n\n'
+            "Supports linear equations with one or more variables,\n"
+            "and systems separated by commas or semicolons.\n"
+            "Examples:  2x + 3 = 7  \u2022  2x + 4y = 1  \u2022  x+y=10, x-y=2\n\n"
+            f"Details: {msg}"
+        )
 
     def _stop_solving(self) -> None:
         self._anim_queue = []

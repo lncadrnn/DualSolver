@@ -52,11 +52,40 @@ class _FakeTk:
 
 def test_friendly_error_for_parse_and_generic() -> None:
     msg_parse = DualSolverApp._friendly_error("2x +", ValueError("Could not parse expression"))
-    assert "Could not understand" in msg_parse
+    assert "could not be parsed as valid math syntax" in msg_parse.lower()
+    assert "How to fix it" in msg_parse
+
+    msg_parse_paren = DualSolverApp._friendly_error(
+        "2(x + 3 = 7",
+        ValueError("Could not parse expression: '2(x + 3'. Error: EOF while scanning"),
+    )
+    assert "parentheses are not balanced" in msg_parse_paren.lower()
+    assert "opening '(' has a closing ')'" in msg_parse_paren
+
+    msg_missing_equal = DualSolverApp._friendly_error(
+        "2x + 3",
+        ValueError("Equation must contain '='. Example: 3x + 2 = 7"),
+    )
+    assert "expression, not an equation" in msg_missing_equal.lower()
+    assert "Add exactly one '=' sign" in msg_missing_equal
+
+    msg_inequality = DualSolverApp._friendly_error(
+        "x < 5",
+        ValueError("Invalid character(s): <\nOnly letters, numbers, and math symbols are allowed."),
+    )
+    assert "inequality symbol" in msg_inequality.lower()
+    assert "replace inequality symbols with '='" in msg_inequality.lower()
+
+    msg_singular = DualSolverApp._friendly_error(
+        "x + y = 2, 2x + 2y = 4",
+        ValueError("Could not solve system numerically: Singular matrix"),
+    )
+    assert "no unique solution" in msg_singular.lower()
+    assert "symbolic mode" in msg_singular.lower()
 
     msg_generic = DualSolverApp._friendly_error("2x+1=0", RuntimeError("boom"))
-    assert "could not process" in msg_generic.lower()
-    assert "Details: boom" in msg_generic
+    assert "unexpected problem" in msg_generic.lower()
+    assert "Technical detail: boom" in msg_generic
 
 
 def test_show_error_ui_path_does_not_crash(monkeypatch) -> None:

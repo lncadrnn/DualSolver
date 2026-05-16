@@ -1,10 +1,8 @@
 """
-DualSolver — Rounded widget helpers for glassmorphism UI.
+DualSolver — Rounded widget helpers for the solid UI.
 
 Canvas-based widgets that provide rounded corners for frames, buttons,
-and input containers within standard Tkinter.  The ``glass=True`` mode
-adds a subtle highlight border that simulates light refracting at the
-edge of a frosted-glass panel.
+and input containers within standard Tkinter.
 """
 
 import tkinter as tk
@@ -34,9 +32,8 @@ class RoundedFrame(tk.Canvas):
     """A Canvas that draws a rounded-rectangle background and hosts
     child widgets inside an embedded ``inner`` Frame.
 
-    When ``glass=True`` an additional thin highlight ring is drawn just
-    inside the border to simulate light refracting at a frosted-glass
-    edge — the hallmark of glassmorphism UI.
+    The optional ``glass`` parameters are retained for backward
+    compatibility and simply add an extra inner highlight ring.
 
     Usage::
 
@@ -58,7 +55,7 @@ class RoundedFrame(tk.Canvas):
         self._radius = corner_radius
         self._bw = border_width
         self._pad = padding
-        # Glass-edge highlight (thin bright ring inside the border)
+        # Optional inner highlight ring (legacy option)
         self._glass = glass
         self._glass_hl = glass_highlight
 
@@ -88,7 +85,7 @@ class RoundedFrame(tk.Canvas):
         if bw > 0 and self._border_color != self._bg_color:
             draw_rounded_rect(self, 0, 0, w, h, r,
                               fill=self._border_color, outline="", tags="bg")
-            # Glass-edge highlight — a thin bright ring just inside the border
+            # Optional inner highlight ring
             if self._glass and self._glass_hl:
                 hl_w = 1  # highlight thickness
                 draw_rounded_rect(self, bw, bw, w - bw, h - bw,
@@ -129,9 +126,8 @@ class RoundedFrame(tk.Canvas):
 class RoundedButton(tk.Canvas):
     """A button drawn on a Canvas with rounded corners.
 
-    Supports hover effects, accent-glow borders, and colour updates
-    for theme switching.  The ``glow_color`` parameter adds a thin
-    accent outline on hover for a glassmorphism *interactive glow*.
+    Supports hover effects, accent outlines, and colour updates
+    for theme switching.
     """
 
     def __init__(self, parent, text="", command=None, font=None,

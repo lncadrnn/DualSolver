@@ -12,7 +12,7 @@ from tkinter import ttk, font as tkfont
 from gui.storage import (
     get_settings, save_settings,
     get_history, get_archived_history,
-    clear_history, add_history,
+    clear_history, add_history, touch_history,
     delete_history_item, toggle_pin, toggle_archive,
     DEFAULT_SETTINGS,
 )
@@ -46,7 +46,15 @@ class Sidebar:
         self._backdrop = tk.Frame(app, bg="#000000")
 
         # ── Sidebar panel — overlays on top using place() ────────────────
-        self._panel = tk.Frame(app, width=_SIDEBAR_W, bg="#060810")
+        self._panel = tk.Frame(
+            app,
+            width=_SIDEBAR_W,
+            bg="#060810",
+            bd=0,
+            highlightthickness=2,
+            highlightbackground="#ffffff",
+            highlightcolor="#ffffff",
+        )
         self._panel.place_forget()
         self._panel.pack_propagate(False)
 
@@ -84,14 +92,15 @@ class Sidebar:
 
         # Active popup menu ref (so we can close it)
         self._popup_menu = None
+        self._scroll_bind_ids: list[tuple[str, str]] = []
 
         self._build_colours()
 
     # ── Colour helpers ──────────────────────────────────────────────────
 
     def _build_colours(self) -> None:
-        from gui.themes import DARK_PALETTE
-        p = DARK_PALETTE
+        from gui import themes
+        p = themes.palette(getattr(self.app, "_theme", "dark"))
         self.c = {
             "bg":       p["BG_DARKER"],
             "bg2":      p["BG"],
@@ -117,15 +126,19 @@ class Sidebar:
 
     def _apply_colours(self) -> None:
         c = self.c
-        self._panel.configure(bg=c["bg"])
+        self._panel.configure(
+            bg=c["bg"],
+            highlightbackground="#ffffff",
+            highlightcolor="#ffffff",
+        )
         self._canvas.configure(bg=c["bg"])
         self._inner.configure(bg=c["bg"])
         self._update_sidebar_scrollbar_style()
 
     def _update_sidebar_scrollbar_style(self) -> None:
         """Style the sidebar scrollbar."""
-        from gui.themes import DARK_PALETTE
-        p = DARK_PALETTE
+        from gui import themes
+        p = themes.palette(getattr(self.app, "_theme", "dark"))
         bg  = p["BG_DARKER"]
         sbg = p["SCROLLBAR_BG"]
         sac = p["SCROLLBAR_ACT"]
@@ -161,9 +174,43 @@ class Sidebar:
 
     # ── Scrolling ───────────────────────────────────────────────────────
 
+    def _bind_sidebar_scroll_events(self) -> None:
+        """Bind mouse-wheel events globally while sidebar is open."""
+        if self._scroll_bind_ids:
+            return
+        for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            bind_id = self.app.bind(sequence, self._on_scroll, add="+")
+            if bind_id:
+                self._scroll_bind_ids.append((sequence, bind_id))
+
+    def _unbind_sidebar_scroll_events(self) -> None:
+        """Remove temporary sidebar mouse-wheel bindings."""
+        for sequence, bind_id in self._scroll_bind_ids:
+            try:
+                self.app.unbind(sequence, bind_id)
+            except Exception:
+                pass
+        self._scroll_bind_ids.clear()
+
     def _on_scroll(self, event: tk.Event) -> None:
-        if self._open:
-            self._canvas.yview_scroll(int(-event.delta / 120), "units")
+        if not self._open:
+            return
+
+        units = 0
+        delta = getattr(event, "delta", 0)
+        if delta:
+            units = int(-delta / 120)
+            if units == 0:
+                units = -1 if delta > 0 else 1
+        else:
+            num = getattr(event, "num", None)
+            if num == 4:
+                units = -1
+            elif num == 5:
+                units = 1
+
+        if units:
+            self._canvas.yview_scroll(units, "units")
             return "break"
 
     # ── Open / Close ────────────────────────────────────────────────────
@@ -196,7 +243,7 @@ class Sidebar:
         self._panel.lift()
 
         self._backdrop.bind("<Button-1>", lambda e: self.close())
-        self._canvas.bind("<MouseWheel>", self._on_scroll)
+        self._bind_sidebar_scroll_events()
 
     def close(self) -> None:
         if not self._open:
@@ -205,7 +252,7 @@ class Sidebar:
         self._close_popup()
         self._panel.place_forget()
         self._backdrop.place_forget()
-        self._canvas.unbind("<MouseWheel>")
+        self._unbind_sidebar_scroll_events()
         self._clear_inner()
 
     def _close_popup(self) -> None:
@@ -247,12 +294,10 @@ class Sidebar:
         try:
             import os
             from PIL import Image, ImageTk
-            base = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "..", "assets")
-            fname = "darkmode-logo.png"
-            path = os.path.normpath(os.path.join(base, fname))
+            from gui import themes
+            path = themes.logo_path()
             img = Image.open(path)
-            h = 56
+            h = 40
             w = int(h * img.width / img.height)
             img = img.resize((w, h), Image.Resampling.LANCZOS)
             self._sidebar_logo_photo = ImageTk.PhotoImage(img)
@@ -417,9 +462,32 @@ class Sidebar:
 
         def _use(eq=eq_full):
             self.close()
-            self.app._entry.delete(0, tk.END)
-            self.app._entry.insert(0, eq)
-            self.app._on_send()
+            if getattr(self.app, '_settings_visible', False):
+                self.app.close_settings_page()
+            if getattr(self.app, '_about_visible', False):
+                self.app.close_about_page()
+
+            mode = str(rec.get("mode", "symbolic") or "symbolic").lower()
+            if mode not in {"symbolic", "numerical", "substitution"}:
+                mode = "symbolic"
+
+            values_str = str(rec.get("values_str", "") or "")
+            compute_mode = str(rec.get("compute_mode", "symbolic") or "symbolic").lower()
+            if compute_mode not in {"symbolic", "numerical"}:
+                compute_mode = "symbolic"
+
+            # Legacy history entries may not include substitution values.
+            if mode == "substitution" and not values_str.strip():
+                mode = "symbolic"
+
+            self.app._clear_chat()
+            self.app._solve_with_mode(
+                eq,
+                mode,
+                values_str=values_str,
+                compute_mode=compute_mode,
+                history_id=record_id,
+            )
 
         for widget in (card, inner, eq_label):
             widget.bind("<Button-1>", lambda e: _use())
@@ -434,10 +502,10 @@ class Sidebar:
 
         popup = tk.Toplevel(self.app)
         popup.overrideredirect(True)
-        popup.configure(bg=c["border"])
+        popup.configure(bg=c["card"])
         self._popup_menu = popup
 
-        inner_frame = tk.Frame(popup, bg=c["card"], padx=1, pady=1)
+        inner_frame = tk.Frame(popup, bg=c["card"], padx=0, pady=0)
         inner_frame.pack(fill=tk.BOTH, expand=True)
 
         is_pinned = rec.get("pinned", False)
@@ -636,6 +704,15 @@ class Sidebar:
         self._apply_settings_to_app(settings)
 
     def _apply_settings_to_app(self, settings: dict) -> None:
+        from gui import themes
+
+        # Theme
+        theme_name = themes.normalize_theme(settings.get("theme", "dark"))
+        self.app._theme = theme_name
+        themes.apply_theme(theme_name)
+        if hasattr(self.app, "_apply_theme_to_ui"):
+            self.app._apply_theme_to_ui()
+
         # Animation speed
         speed = settings.get("animation_speed", "normal")
         speed_map = {"slow": 24, "normal": 12, "fast": 4, "instant": 0}
@@ -704,6 +781,16 @@ class Sidebar:
     def current_user(self):
         return None  # No user system — kept for compatibility
 
-    def record_solve(self, equation: str, answer: str) -> None:
+    def record_solve(self, equation: str, answer: str, *,
+                     mode: str = "symbolic",
+                     values_str: str = "",
+                     compute_mode: str = "symbolic",
+                     history_id: str = "") -> None:
         """Log a solved equation to local history."""
-        add_history(equation, answer)
+        if history_id and touch_history(history_id):
+            return
+
+        add_history(equation, answer,
+                    mode=mode,
+                    values_str=values_str,
+                    compute_mode=compute_mode)
