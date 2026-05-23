@@ -24,7 +24,7 @@ from gui.widgets import WidgetMixin
 from gui.export import ExportMixin
 from gui.symbolpad import SymbolPadMixin
 from gui.settings import SettingsMixin
-from gui.about import AboutMixin
+from gui.about import AboutMixin, APP_VERSION
 from gui.rounded import RoundedFrame, RoundedButton
 
 
@@ -39,9 +39,15 @@ class DualSolverApp(
 ):
     """Main application window."""
 
+    # The canonical APP_VERSION constant lives in `gui/about.py` so the
+    # About page can read it without a back-reference to this class.
+    # We surface it here as a class attribute so existing call sites
+    # (e.g. tests) that look up `DualSolverApp.APP_VERSION` keep working.
+    APP_VERSION = APP_VERSION
+
     def __init__(self) -> None:
         super().__init__()
-        self.title("DualSolver — Linear Equation Solver")
+        self.title(f"DualSolver v{self.APP_VERSION} — Linear Equation Solver")
         self.geometry("1000x850")
         self.minsize(680, 600)
         self.configure(bg=themes.BG)
@@ -123,7 +129,21 @@ class DualSolverApp(
             self._header, text="DualSolver", font=self._header_title_font,
             bg=themes.HEADER_BG, fg=themes.TEXT_BRIGHT,
         )
-        self._header_title.pack(side=tk.LEFT, padx=(6, 20))
+        self._header_title.pack(side=tk.LEFT, padx=(6, 4))
+
+        # Version badge — small dimmed pill rendered next to the title.
+        # Lives in its own tk.Label so theme switching can re-color it via
+        # _apply_theme_to_ui without touching the title itself.
+        self._version_badge_font = tkfont.Font(
+            family=self._ui_family, size=10, weight="bold"
+        )
+        self._version_badge = tk.Label(
+            self._header, text=f"v{self.APP_VERSION}",
+            font=self._version_badge_font,
+            bg=themes.HEADER_BG, fg=themes.TEXT_DIM,
+            padx=8, pady=2,
+        )
+        self._version_badge.pack(side=tk.LEFT, padx=(0, 20))
 
         self._small_bold = tkfont.Font(family=self._ui_family, size=12, weight="bold")
         self._new_btn = RoundedButton(
@@ -360,6 +380,8 @@ class DualSolverApp(
                 pass
         if hasattr(self, "_header_title"):
             self._header_title.configure(bg=p["HEADER_BG"], fg=p["TEXT_BRIGHT"])
+        if hasattr(self, "_version_badge"):
+            self._version_badge.configure(bg=p["HEADER_BG"], fg=p["TEXT_DIM"])
 
         if hasattr(self, "_new_btn"):
             self._new_btn.configure_colors(

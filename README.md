@@ -1,61 +1,36 @@
 # DualSolver
 
-Version: 1.0.0
+**Version:** 1.0.0
+**Course:** Numeric and Symbolic Computation (COSC 110) — Cavite State University, Imus
 
-DualSolver is a desktop learning tool for solving linear equations step by step.
-It supports symbolic computation (exact values), numerical computation (decimal values),
-and substitution checking. The interface is a chat-style Tkinter app with a solid dark style,
-animated trails, graph/analysis cards, export options, and local solve history.
+DualSolver is a desktop learning tool that solves linear equations step by step.
+It supports three computation modes — **Symbolic** (exact), **Numerical** (decimal),
+and **Substitution** (verify values) — and explains every algebraic move it makes
+using the name of the property applied (Distributive, Subtraction Property of
+Equality, Combining Like Terms, etc.).
 
-This project was developed for Numeric and Symbolic Computation (COSC 110)
-at Cavite State University - Imus.
+The interface is a chat-style Tkinter app with a solid dark theme, six color
+palettes, animated solution trails, embedded Matplotlib graphs, case analysis,
+HTML/PDF export, and local solve history.
 
-## Repository Review Summary
+---
 
-- The codebase is cleanly split into UI (`gui/`) and solver logic (`solver/`).
-- Solve dispatch is centralized in `solver/engine.py` (`symbolic`, `numerical`, `substitution`).
-- Trail output format is consistent across modes:
-   `GIVEN -> METHOD -> STEPS -> FINAL ANSWER -> VERIFICATION -> SUMMARY`
-   plus `GRAPH & ANALYSIS` in the GUI when applicable.
-- Local persistence is file-based (`data/dualsolver.json`) with no external service dependency.
-- Current test suite status (local): `67 passed`.
+## Highlights
 
-## Core Features
+- **Three modes in one solver** — Symbolic (SymPy), Numerical (NumPy), Substitution (verify a guess).
+- **Educational by design** — every step is labelled with the algebraic property it applies, every non-linear input gets an explanation of *why* it's non-linear and *what method would solve it* (Quadratic Formula, Newton's Method, etc.).
+- **Robust to messy input** — full-width characters, Unicode minus / multiplication / division, smart quotes, and look-alikes all normalize to ASCII before parsing.
+- **No accounts, no cloud** — every solve, every setting, every piece of history lives in a single local JSON file.
+- **Exportable** — copy as plain text, save as HTML, or save as PDF (with embedded graph image and a "Result Interpretation" metadata block).
+- **Six palettes** — Ocean Blue, Obsidian Black, Emerald Green, Sunset Orange, Crimson Red, Violet.
 
-- Symbolic solving via SymPy for exact algebraic results.
-- Numerical solving via NumPy for decimal approximations.
-- Substitution mode to verify whether user-provided values satisfy an equation.
-- Single-equation, multi-variable, and system-of-equations support.
-- Non-linear input detection with educational feedback.
-- Step-by-step trail generation with explanations.
-- Verification steps and validation status in every solve result.
-- Embedded Matplotlib graph and case analysis panel.
-- Export solution trail to clipboard text and PDF.
-- Sidebar history with pin, archive, delete, and clear operations.
-- Settings page for animation speed and section auto-expand behavior.
-- Symbol pad for quick math input.
-- About/Help page (`?` button in header) with in-app guidance.
+---
 
-## Dependencies
-
-Install from `requirements.txt`:
-
-- `sympy>=1.13`
-- `matplotlib>=3.8`
-- `numpy>=1.26`
-- `fpdf2>=2.8`
-- `pytest>=8.0`
-
-Notes:
-
-- Tkinter is included with standard CPython on most desktop installs.
-- Pillow is optional for loading PNG logos; without Pillow, the app falls back to text labels.
-
-## How To Run
+## Setup
 
 ### 1. Create and activate a virtual environment
 
-Windows (PowerShell):
+**Windows (PowerShell):**
 
 ```powershell
 python -m venv .venv
@@ -63,7 +38,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 .\.venv\Scripts\Activate.ps1
 ```
 
-macOS/Linux (bash/zsh):
+**macOS / Linux (bash / zsh):**
 
 ```bash
 python3 -m venv .venv
@@ -76,7 +51,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Optional logo support:
+Optional logo support (without it, the header shows a text label):
 
 ```bash
 pip install pillow
@@ -88,109 +63,183 @@ pip install pillow
 python main.py
 ```
 
-## How To Use The App
+---
 
-1. Enter an equation in the input bar (for systems, separate equations with `,` or `;`).
-2. Click `Solve` or press `Enter`.
-3. Choose a computation mode in the modal:
-    `Symbolic`, `Numerical`, or `Substitution`.
-4. Read the generated trail cards in order.
-5. Expand/collapse graph and analysis when available.
-6. Use `Copy to Clipboard` or `Save as PDF` to export results.
-7. Open sidebar (`hamburger`) to review history, pin/archive items, or open settings.
-8. Open the sidebar and choose `Help & About` for guidance.
+## Dependencies
 
-Keyboard shortcuts:
+| Package      | Min version | Purpose                                  |
+| ------------ | ----------- | ---------------------------------------- |
+| `sympy`      | 1.13        | Symbolic algebra engine                  |
+| `numpy`      | 1.26        | Numerical linear algebra (matrix solve)  |
+| `matplotlib` | 3.8         | Graph rendering inside the app           |
+| `fpdf2`      | 2.8         | PDF export                               |
+| `pytest`     | 8.0         | Automated test runner                    |
+| `pillow`     | *(opt.)*    | Header logo (PNG); falls back to a label |
 
-- `Enter`: trigger solve flow
-- `Escape`: close Settings/About/sidebar (context-aware)
+Tkinter ships with standard CPython on Windows and macOS — no separate install needed.
 
-## Supported Input Patterns
+---
 
-- Single-variable linear equation:
-   `3x + 2 = 7`
-- Single equation, multiple variables:
-   `2x + 4y = 1`
-- System of equations:
-   `x + y = 10, x - y = 2`
-- Substitution values format:
-   `x = 3` or `x = 3, y = 4`
+## Usage
 
-Accepted operators/symbols include:
+1. Type a linear equation in the input bar.
+2. Press **Enter** or click **Solve**.
+3. Pick a computation mode in the modal:
+   - **Symbolic** — exact answers using fractions / radicals / π (SymPy).
+   - **Numerical** — decimal approximations (NumPy).
+   - **Substitution** — provide variable values, then verify whether the equation holds.
+4. Read the animated step-by-step trail. Each step shows the algebraic property used.
+5. Expand the **Graph & Analysis** card for a visual + case classification.
+6. Use **Copy to Clipboard**, **Save as HTML**, or **Save as PDF** to export.
+7. Open the **sidebar** (hamburger ☰) for history (pin / archive / delete / clear).
+8. **Settings** lets you switch palettes, change animation speed, and toggle auto-expand of verification / graph sections.
+9. **About / Help** lives behind the `?` button in the header.
 
-- `+ - * / ^ = ( ) [ ] { } . , ; :`
-- Unicode `pi` / `π` and `sqrt` / `√` are normalized internally.
+### Keyboard shortcuts
 
-## Output Contract
+| Key      | Action                                              |
+| -------- | --------------------------------------------------- |
+| `Enter`  | Submit current input — opens the mode picker        |
+| `Escape` | Close Settings / About / sidebar (context-aware)    |
 
-Each solve returns a dictionary with these top-level fields:
+### Supported input patterns
 
-- `equation`
-- `given`
-- `method`
-- `steps`
-- `final_answer`
-- `verification_steps`
-- `summary`
+| Pattern                          | Example                  |
+| -------------------------------- | ------------------------ |
+| Single-variable linear equation  | `3x + 2 = 7`             |
+| Single equation, many variables  | `2x + 4y = 1`            |
+| System of equations              | `x + y = 10, x - y = 2`  |
+| Substitution values              | `x = 3` or `x = 3, y = 4`|
+| With constants π and √           | `x + π = 10`             |
+| With fractions                   | `(1/2)x + 1 = 3`         |
+| With decimal coefficients        | `0.5x + 1 = 3`           |
 
-`summary` includes runtime, step counts, validation status, timestamp, and computation library.
+**Accepted operators and characters:** `+ - * / ^ = ( ) [ ] { } . , ; :`
+plus single-letter variable names.
 
-## Project Structure
+**Auto-normalized:** full-width characters (`２ｘ ＝ ４` → `2x = 4`),
+Unicode minus / dash variants (`−`, `–`, `—`), multiplication / division
+signs (`×`, `÷`), smart quotes, and π / √.
+
+---
+
+## Output contract
+
+Every solve returns a dictionary with this structure:
+
+```
+equation, given, method, steps, final_answer, verification_steps, summary
+```
+
+- Each `steps[]` and `verification_steps[]` entry carries `step_number`,
+  `description`, `expression`, `explanation`, and a `property` field naming
+  the algebraic rule applied (e.g. *"Subtraction Property of Equality"*).
+- `method.parameters` carries an `equation_type_code` — a machine-readable
+  classifier (`linear_single_var`, `linear_system_2x2`,
+  `linear_degenerate_identity`, `nonlinear_degree`, `nonlinear_denominator`,
+  `nonlinear_product`, `nonlinear_transcendental`, `constant_tautology`,
+  `constant_contradiction`, `substitution_true` / `_false` / `_indeterminate`).
+- `summary` always includes `runtime_ms`, `total_steps`, `verification_steps`,
+  `validation_status` (`"pass"` / `"fail"`), `timestamp`, and `library`.
+- Non-linear inputs return `nonlinear_education: True` and a `validation_status`
+  of `"fail"` — these are *educational responses*, not errors. The
+  `final_answer` ends with a `→ ...` method-suggestion line.
+
+Full validation rules and type maps: [`tests/VALIDATION_RULES.md`](tests/VALIDATION_RULES.md).
+
+---
+
+## Project structure
 
 ```text
 DualSolver/
-|- main.py
-|- README.md
-|- process.md
-|- requirements.txt
-|- assets/
-|- data/
-|- gui/
-|- solver/
-`- tests/
+├─ main.py              # Three-line entry point
+├─ requirements.txt
+├─ README.md
+├─ process.md           # Implementation walkthrough
+├─ TESTING.md           # Test plan and manual checklist
+├─ CLAUDE.md            # Codebase guide
+├─ assets/              # Logo
+├─ data/                # Local JSON (auto-created on first run)
+├─ gui/                 # Tkinter UI (mixin-based)
+│  ├─ app.py            #   Main window
+│  ├─ animation.py      #   Step-by-step animated rendering
+│  ├─ widgets.py        #   Section headers, cards, fraction renderer
+│  ├─ export.py         #   Clipboard / HTML / PDF export
+│  ├─ symbolpad.py      #   Symbol pad (≤, ≥, π, √, etc.)
+│  ├─ settings.py       #   Theme + animation preferences
+│  ├─ about.py          #   In-app Help & About
+│  ├─ sidebar.py        #   History sidebar
+│  ├─ storage.py        #   data/dualsolver.json persistence
+│  ├─ themes.py         #   Six palette dicts + mutable shortcuts
+│  └─ rounded.py        #   Hand-drawn rounded frame/button widgets
+└─ solver/              # Pure Python — no Tkinter imports
+   ├─ engine.py         #   Mode dispatcher
+   ├─ symbolic.py       #   SymPy solver (single var, multi-var, system)
+   ├─ numerical.py      #   NumPy solver (decimal results)
+   ├─ substitution.py   #   Substitution verifier
+   └─ graph.py          #   Matplotlib figures + case analysis
 ```
 
-Key modules:
-
-- `solver/engine.py`: mode dispatcher and compatibility exports.
-- `solver/symbolic.py`: SymPy-based symbolic solver and trail builder.
-- `solver/numerical.py`: NumPy-based numerical solver and verification.
-- `solver/substitution.py`: substitution checker workflow.
-- `solver/graph.py`: graph rendering and case analysis.
-- `gui/app.py`: main window and solve flow.
-- `gui/about.py`: About/Help page.
-- `gui/settings.py`: settings page.
-- `gui/sidebar.py`: history and navigation.
-- `gui/storage.py`: local JSON persistence.
+---
 
 ## Testing
 
-Run all tests:
-
 ```bash
-pytest -q
+pytest                                    # all tests
+pytest -v                                 # verbose
+pytest tests/test_engine_unit.py          # one file
+pytest -k "test_solve_linear_equation"    # by name pattern
 ```
 
-Validation and expected data-contract checks are documented in:
+Target: **~97 passing tests** across eight files covering math correctness,
+data validation, error handling, theming, graph generation, edge cases,
+and the Phase-1 educational additions (property names, equation-type codes,
+non-linear method hints, full substitution trail). See
+[`TESTING.md`](TESTING.md) for the full test plan and manual checklist.
 
-- `tests/VALIDATION_RULES.md`
+---
 
-## Data Storage And Privacy
+## Data storage & privacy
 
-- All history and settings are stored locally in `data/dualsolver.json`.
-- No login, cloud account, or remote database is required.
+- All history and settings live in `data/dualsolver.json` (relative to the project root).
+- No login, no telemetry, no cloud, no network calls.
+- History is capped at 200 entries (oldest fall off automatically).
+- The data file is human-readable; if it gets corrupted, the app falls back to defaults instead of crashing.
+
+---
+
+## Limitations (by design)
+
+| Area                | What's not supported                                                                                              |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Equation type**   | Linear equations only. Quadratic / cubic / higher-degree, transcendental (`sin`, `cos`, `log`, `exp`), variables in denominators (`1/x`), and products of variables (`x·y`) are detected and explained but not solved. |
+| **Visual style**    | Solid opaque panels by design — no OS blur / acrylic / mica effects.                                              |
+| **Logo display**    | Requires `pillow`. Without it, the header shows a text label.                                                     |
+| **Offline only**    | No cloud sync, no multi-device support, no account system.                                                        |
+| **History cap**     | 200 entries maximum.                                                                                              |
+| **Input length**    | 500 characters maximum per solve (`_MAX_INPUT_LENGTH` in `solver/symbolic.py`).                                   |
+| **Themes**          | Six dark palettes. No light mode — the app is intentionally a dark-only experience.                              |
+
+---
 
 ## Troubleshooting
 
-- Parse error:
-   Ensure input contains exactly one `=` for single equations and valid math symbols only.
-- Non-linear detection:
-   Inputs like `x^2`, `sin(x)`, `1/x`, or `x*y` are intentionally flagged as non-linear.
-- PDF export error:
-   Install `fpdf2` and retry.
+| Symptom                                            | Fix                                                                                          |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `Parse error` on a valid-looking equation          | Ensure there is exactly one `=`; check for stray operators or unbalanced parentheses.        |
+| App treats `x^2 + 1 = 0` as an error               | This is intentional — non-linear inputs return an educational explanation, not a solution.   |
+| `Save as PDF` fails with a missing-module error    | Re-run `pip install -r requirements.txt`; the project requires `fpdf2 >= 2.8`.               |
+| Header shows a text label instead of a logo        | Install Pillow: `pip install pillow`.                                                        |
+| Pasting `２ｘ ＝ ４` gives "Invalid character"        | Update to v1.0+ — full-width characters are normalized to ASCII automatically.               |
+| Settings reset themselves after a crash            | `data/dualsolver.json` was corrupted and rebuilt from defaults — your work isn't lost in memory; just re-export. |
+
+---
 
 ## Creators
 
-- Acal, Lance Adrian
-- Garcia, Jesly Dinsen
-- Moreno, Ryel Austin
+- **Acal, Lance Adrian**
+- **Garcia, Jesly Dinsen**
+- **Moreno, Ryel Austin**
+
+Built for COSC 110 — Numeric and Symbolic Computation, Cavite State University Imus, AY 2025–2026.

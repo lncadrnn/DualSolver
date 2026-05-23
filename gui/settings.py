@@ -25,10 +25,22 @@ class SettingsMixin:
             self._settings_frame.destroy()
 
         if not self._settings_visible:
-            self._chat_wrapper.pack_forget()
-            self._input_bar.pack_forget()
+            try:
+                self._chat_wrapper.pack_forget()
+            except Exception:
+                try:
+                    self._chat_frame.pack_forget()
+                except Exception:
+                    pass
+            try:
+                self._input_bar.pack_forget()
+            except Exception:
+                pass
             self._settings_visible = True
-            self._new_btn.pack_forget()
+            try:
+                self._new_btn.pack_forget()
+            except Exception:
+                pass
 
         p = themes.palette(self._theme)
         accent_text = p.get("ACCENT_TEXT", "#ffffff")
