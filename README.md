@@ -23,7 +23,6 @@ A desktop step-by-step solver for linear equations, built for COSC 110 (Numeric 
 ```text
 DualSolver/
 ├── main.py                  # Three-line entry point
-├── CLAUDE.md                # Codebase guide for Claude Code
 ├── README.md
 ├── requirements.txt         # Runtime dependencies
 ├── requirements-dev.txt     # Dev/test dependencies (pytest)
@@ -77,8 +76,8 @@ DualSolver/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/lncadrnn/SymSolver.git
-cd SymSolver
+git clone https://github.com/lncadrnn/DualSolver.git
+cd DualSolver
 ```
 
 ### 2. Create and activate a virtual environment
@@ -148,8 +147,6 @@ The codebase follows a strict two-layer split.
 **Trail output contract** — every solve returns a dict with seven keys: `equation`, `given`, `method`, `steps`, `final_answer`, `verification_steps`, `summary`. Every step carries a `property` field naming the algebraic rule applied. The full schema and type map are in `tests/VALIDATION_RULES.md`.
 
 **Storage** — `gui/storage.py` persists settings and history to `data/dualsolver.json`. History is capped at 200 entries; the file auto-recovers from corruption.
-
-See `CLAUDE.md` for exhaustive detail on conventions, edge-case handling, and Phase-1 schema additions.
 
 ---
 
