@@ -254,10 +254,10 @@ class AboutMixin:
         tk.Label(overview, text="Interface Overview", font=section_font,
                  bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
         _line(overview, "The app has four main areas:")
-        _line(overview, "  •  Input Bar (bottom center) — type your equation here and press Solve or Enter.")
-        _line(overview, "  •  Results Area (center) — shows the step-by-step solve trail as expandable cards.")
-        _line(overview, "  •  Sidebar (left, ☰ icon) — open to browse and manage your solve history.")
-        _line(overview, "  •  Symbol Pad (keyboard icon near input bar) — insert math symbols with one click.")
+        _line(overview, "  •  Input Bar (bottom center) - type your equation here and press Solve or Enter.")
+        _line(overview, "  •  Results Area (center) - shows the step-by-step solve trail as expandable cards.")
+        _line(overview, "  •  Sidebar (left, ☰ icon) - open to browse and manage your solve history.")
+        _line(overview, "  •  Symbol Pad (keyboard icon near input bar) - insert math symbols with one click.")
 
         # 2. Entering Equations
         input_guide = _section_card(guide_content)
@@ -274,7 +274,7 @@ class AboutMixin:
               "Separate two equations in a system with a comma (,) or semicolon (;).",
               font=small_font, fg=p["TEXT_DIM"], pady=(8, 2))
         _line(input_guide,
-              "Unicode minus signs, full-width digits, and smart quotes are accepted — "
+              "Unicode minus signs, full-width digits, and smart quotes are accepted - "
               "the solver normalizes them automatically before parsing.",
               font=small_font, fg=p["TEXT_DIM"], pady=(0, 2))
         _line(input_guide,
@@ -286,14 +286,14 @@ class AboutMixin:
         tk.Label(modes_guide, text="Choosing a Solve Mode", font=section_font,
                  bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
         _line(modes_guide, "After pressing Solve (or Enter), a popup asks which mode to use:")
-        _line(modes_guide, "  Symbolic — Exact answers as fractions or symbolic expressions (powered by SymPy).")
+        _line(modes_guide, "  Symbolic - Exact answers as fractions or symbolic expressions (powered by SymPy).")
         _line(modes_guide, "                Best for learning: shows every algebraic step with property names.")
-        _line(modes_guide, "  Numerical — Decimal approximations (powered by NumPy).")
+        _line(modes_guide, "  Numerical - Decimal approximations (powered by NumPy).")
         _line(modes_guide, "                Best when a quick numeric result is all you need.")
-        _line(modes_guide, "  Substitution — Checks whether specific values satisfy the equation.")
+        _line(modes_guide, "  Substitution - Checks whether specific values satisfy the equation.")
         _line(modes_guide, "                After selecting this mode a Values field appears in the input area.")
         _line(modes_guide,
-              "For most study use-cases, start with Symbolic — it shows the most detail.",
+              "For most study use-cases, start with Symbolic - it shows the most detail.",
               font=small_font, fg=p["TEXT_DIM"], pady=(8, 0))
 
         # 4. Reading the Results
@@ -333,7 +333,7 @@ class AboutMixin:
         _line(subst_guide, "How to use it:")
         _line(subst_guide, "  1.  Enter the equation in the input bar, e.g.   2x + y = 8")
         _line(subst_guide, "  2.  Press Solve and select Substitution from the mode popup.")
-        _line(subst_guide, "  3.  A Values field appears — enter the values to test:")
+        _line(subst_guide, "  3.  A Values field appears - enter the values to test:")
         _line(subst_guide, "          x = 3, y = 2     or     x = 5", mono=True)
         _line(subst_guide, "  4.  Press Solve again. The result will be True, False, or Indeterminate.")
         _line(subst_guide,
@@ -375,11 +375,11 @@ class AboutMixin:
                  bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
         _line(export_guide, "After a solve completes, export buttons appear below the trail:")
         _line(export_guide,
-              "  Copy to Clipboard — copies the full trail as plain text, ready to paste anywhere.")
+              "  Copy to Clipboard - copies the full trail as plain text, ready to paste anywhere.")
         _line(export_guide,
-              "  Export PDF        — saves a formatted PDF to a location you choose.")
+              "  Export PDF        - saves a formatted PDF to a location you choose.")
         _line(export_guide,
-              "  Export HTML       — saves an HTML file that can be opened in any web browser.")
+              "  Export HTML       - saves an HTML file that can be opened in any web browser.")
         _line(export_guide,
               "All exports include every section: equation, method, steps, answer, verification, and summary.",
               font=small_font, fg=p["TEXT_DIM"], pady=(6, 0))
@@ -440,12 +440,12 @@ class AboutMixin:
         tech = _section_card(about_content)
         tk.Label(tech, text="Technology", font=section_font,
                  bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
-        _line(tech, "  •  Python 3 — core language.")
-        _line(tech, "  •  Tkinter — native desktop GUI, no browser required.")
-        _line(tech, "  •  SymPy — symbolic math engine for exact solutions.")
-        _line(tech, "  •  NumPy — numerical engine for decimal approximations.")
-        _line(tech, "  •  Matplotlib — equation graph rendering.")
-        _line(tech, "Fully offline — no internet connection or accounts required.",
+        _line(tech, "  •  Python 3 - core language.")
+        _line(tech, "  •  Tkinter - native desktop GUI, no browser required.")
+        _line(tech, "  •  SymPy - symbolic math engine for exact solutions.")
+        _line(tech, "  •  NumPy - numerical engine for decimal approximations.")
+        _line(tech, "  •  Matplotlib - equation graph rendering.")
+        _line(tech, "Fully offline - no internet connection or accounts required.",
               font=small_font, fg=p["TEXT_DIM"], pady=(6, 0))
 
         creators = _section_card(about_content)
