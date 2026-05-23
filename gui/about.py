@@ -75,15 +75,17 @@ class AboutMixin:
         self._about_scroll_id = about_canvas.bind_all("<MouseWheel>", _about_mousewheel)
 
         _ui = getattr(self, "_ui_family", "Segoe UI")
-        title_font = tkfont.Font(family=_ui, size=22, weight="bold")
+        title_font   = tkfont.Font(family=_ui, size=22, weight="bold")
         version_font = tkfont.Font(family=_ui, size=11, weight="bold")
         section_font = tkfont.Font(family=_ui, size=15, weight="bold")
-        body_font = tkfont.Font(family=_ui, size=13)
-        small_font = tkfont.Font(family=_ui, size=12)
+        body_font    = tkfont.Font(family=_ui, size=13)
+        small_font   = tkfont.Font(family=_ui, size=12)
+        tab_font     = tkfont.Font(family=_ui, size=13, weight="bold")
 
         center = tk.Frame(about_inner, bg=p["BG"])
         center.pack(anchor="n", pady=(40, 40), padx=60, fill=tk.X)
 
+        # ── Header ───────────────────────────────────────────────────────────────
         header_row = tk.Frame(center, bg=p["BG"])
         header_row.pack(fill=tk.X, pady=(0, 20))
 
@@ -100,7 +102,6 @@ class AboutMixin:
                 )
                 if os.path.exists(icon_path):
                     back_icon = tk.PhotoImage(file=icon_path)
-                    # Keep the icon compact in dense header rows.
                     target_px = 22
                     scale = max(1, int(max(
                         back_icon.width() / target_px,
@@ -158,6 +159,18 @@ class AboutMixin:
             pady=4,
         ).pack(side=tk.RIGHT)
 
+        # ── Tab switcher ─────────────────────────────────────────────────────────
+        tab_row = tk.Frame(center, bg=p["BG"])
+        tab_row.pack(fill=tk.X, pady=(0, 4))
+
+        # Two swappable content frames inside a common container.
+        content_container = tk.Frame(center, bg=p["BG"])
+        content_container.pack(fill=tk.X)
+
+        guide_content = tk.Frame(content_container, bg=p["BG"])
+        about_content = tk.Frame(content_container, bg=p["BG"])
+
+        # ── Shared helpers ───────────────────────────────────────────────────────
         def _section_card(parent) -> tk.Frame:
             card_rf = RoundedFrame(
                 parent,
@@ -185,155 +198,273 @@ class AboutMixin:
                 anchor="w",
             ).pack(anchor="w", fill=tk.X, pady=pady)
 
-        intro = _section_card(center)
+        def _switch_tab(name: str) -> None:
+            if name == "guide":
+                about_content.pack_forget()
+                guide_content.pack(fill=tk.X)
+                guide_btn.configure(bg=p["ACCENT"], fg=p["BG"],
+                                    activebackground=p["ACCENT"], activeforeground=p["BG"])
+                about_btn.configure(bg=p["STEP_BG"], fg=p["TEXT_DIM"],
+                                    activebackground=p["STEP_BG"], activeforeground=p["TEXT_BRIGHT"])
+            else:
+                guide_content.pack_forget()
+                about_content.pack(fill=tk.X)
+                about_btn.configure(bg=p["ACCENT"], fg=p["BG"],
+                                    activebackground=p["ACCENT"], activeforeground=p["BG"])
+                guide_btn.configure(bg=p["STEP_BG"], fg=p["TEXT_DIM"],
+                                    activebackground=p["STEP_BG"], activeforeground=p["TEXT_BRIGHT"])
+            about_canvas.after(50, _update_about_scroll)
 
-        tk.Label(
-            intro,
-            text="What This App Is",
-            font=section_font,
+        guide_btn = tk.Button(
+            tab_row,
+            text="User Guide",
+            font=tab_font,
+            bg=p["ACCENT"],
+            fg=p["BG"],
+            activebackground=p["ACCENT"],
+            activeforeground=p["BG"],
+            bd=0,
+            padx=20,
+            pady=8,
+            cursor="hand2",
+            command=lambda: _switch_tab("guide"),
+        )
+        guide_btn.pack(side=tk.LEFT, padx=(0, 6))
+
+        about_btn = tk.Button(
+            tab_row,
+            text="About",
+            font=tab_font,
             bg=p["STEP_BG"],
-            fg=p["ACCENT"],
-        ).pack(anchor="w", pady=(0, 8))
-
-        _line(
-            intro,
-            (
-                "DualSolver is a step-by-step solver for linear equations and "
-                "systems, designed for symbolic and numerical computation learning."
-            ),
-        )
-        _line(
-            intro,
-            (
-                "Course context: Numeric and Symbolic Computation (COSC 110), "
-                "Cavite State University - Imus."
-            ),
-            font=small_font,
             fg=p["TEXT_DIM"],
-            pady=(6, 0),
+            activebackground=p["STEP_BG"],
+            activeforeground=p["TEXT_BRIGHT"],
+            bd=0,
+            padx=20,
+            pady=8,
+            cursor="hand2",
+            command=lambda: _switch_tab("about"),
         )
-        _line(
-            intro,
-            "Standard output flow: GIVEN -> METHOD -> STEPS -> FINAL ANSWER -> VERIFICATION -> SUMMARY",
-            font=small_font,
-            fg=p["TEXT_DIM"],
-            pady=(6, 0),
-        )
+        about_btn.pack(side=tk.LEFT)
 
-        how = _section_card(center)
+        # ── USER GUIDE TAB ───────────────────────────────────────────────────────
 
-        tk.Label(
-            how,
-            text="Quick Start",
-            font=section_font,
-            bg=p["STEP_BG"],
-            fg=p["ACCENT"],
-        ).pack(anchor="w", pady=(0, 8))
+        # 1. Interface Overview
+        overview = _section_card(guide_content)
+        tk.Label(overview, text="Interface Overview", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(overview, "The app has four main areas:")
+        _line(overview, "  •  Input Bar (bottom center) — type your equation here and press Solve or Enter.")
+        _line(overview, "  •  Results Area (center) — shows the step-by-step solve trail as expandable cards.")
+        _line(overview, "  •  Sidebar (left, ☰ icon) — open to browse and manage your solve history.")
+        _line(overview, "  •  Symbol Pad (keyboard icon near input bar) — insert math symbols with one click.")
 
-        steps = [
-            "1. Enter a linear equation or a system in the input bar.",
-            "2. Press Solve (or Enter) and choose a solve mode.",
-            "3. Read the generated trail cards in order.",
-            "4. Expand Graph and Analysis when available.",
-            "5. Export using Copy to Clipboard or Export (PDF, HTML).",
-            "6. Use New Chat to clear the current conversation.",
+        # 2. Entering Equations
+        input_guide = _section_card(guide_content)
+        tk.Label(input_guide, text="Entering Equations", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(input_guide, "Type your equation into the input bar. Supported formats:")
+        _line(input_guide, "  Single variable:     2x + 5 = 11", mono=True)
+        _line(input_guide, "  Two variables:       3x - y = 4", mono=True)
+        _line(input_guide, "  System of two eqs:   x + y = 10, x - y = 2", mono=True)
+        _line(input_guide, "  With parentheses:    2(x + 3) = 14", mono=True)
+        _line(input_guide, "  With fractions:      x/2 + 1 = 3", mono=True)
+        _line(input_guide, "  Exponents (^ notation):  x^2 + x = 6", mono=True)
+        _line(input_guide,
+              "Separate two equations in a system with a comma (,) or semicolon (;).",
+              font=small_font, fg=p["TEXT_DIM"], pady=(8, 2))
+        _line(input_guide,
+              "Unicode minus signs, full-width digits, and smart quotes are accepted — "
+              "the solver normalizes them automatically before parsing.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(0, 2))
+        _line(input_guide,
+              "π and √ are also accepted and converted to pi and sqrt internally.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(0, 0))
+
+        # 3. Choosing a Solve Mode
+        modes_guide = _section_card(guide_content)
+        tk.Label(modes_guide, text="Choosing a Solve Mode", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(modes_guide, "After pressing Solve (or Enter), a popup asks which mode to use:")
+        _line(modes_guide, "  Symbolic — Exact answers as fractions or symbolic expressions (powered by SymPy).")
+        _line(modes_guide, "                Best for learning: shows every algebraic step with property names.")
+        _line(modes_guide, "  Numerical — Decimal approximations (powered by NumPy).")
+        _line(modes_guide, "                Best when a quick numeric result is all you need.")
+        _line(modes_guide, "  Substitution — Checks whether specific values satisfy the equation.")
+        _line(modes_guide, "                After selecting this mode a Values field appears in the input area.")
+        _line(modes_guide,
+              "For most study use-cases, start with Symbolic — it shows the most detail.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(8, 0))
+
+        # 4. Reading the Results
+        results_guide = _section_card(guide_content)
+        tk.Label(results_guide, text="Reading the Results", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(results_guide, "Each solve produces a trail of cards displayed in order:")
+        entries = [
+            ("GIVEN",        "The equation as the solver parsed it (after normalization)."),
+            ("METHOD",       "The algorithm used and key parameters (variable count, equation type)."),
+            ("STEPS",        "Numbered derivation steps. Each step names the algebraic rule applied\n"
+                             "                  (e.g. Subtraction Property of Equality, Distributive Property)."),
+            ("FINAL ANSWER", "The solution, or a special message if no unique solution exists\n"
+                             "                  (tautology, contradiction, or non-linear notice)."),
+            ("VERIFICATION", "The answer is substituted back into the original equation to confirm it."),
+            ("SUMMARY",      "Runtime, total step count, validation status (PASS / FAIL), and timestamp."),
         ]
-        for step in steps:
-            _line(how, step)
+        for label, desc in entries:
+            row_f = tk.Frame(results_guide, bg=p["STEP_BG"])
+            row_f.pack(anchor="w", fill=tk.X, pady=(0, 4))
+            tk.Label(row_f, text=f"{label:<16}", font=self._mono, bg=p["STEP_BG"],
+                     fg=p["ACCENT"]).pack(side=tk.LEFT, anchor="nw")
+            tk.Label(row_f, text=desc, font=body_font, bg=p["STEP_BG"],
+                     fg=p["TEXT_BRIGHT"], justify=tk.LEFT, wraplength=720,
+                     anchor="nw").pack(side=tk.LEFT, anchor="nw")
+        _line(results_guide,
+              "Click a card header to expand or collapse it. A GRAPH & ANALYSIS card appears below "
+              "the summary for single-variable linear equations.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(8, 0))
 
-        _line(
-            how,
-            "Shortcuts: Enter to solve, Escape to close Settings/About/Sidebar.",
-            font=small_font,
-            fg=p["TEXT_DIM"],
-            pady=(6, 0),
-        )
+        # 5. Substitution Mode
+        subst_guide = _section_card(guide_content)
+        tk.Label(subst_guide, text="Using Substitution Mode", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(subst_guide,
+              "Substitution mode lets you check whether a set of specific values satisfies an equation.")
+        _line(subst_guide, "How to use it:")
+        _line(subst_guide, "  1.  Enter the equation in the input bar, e.g.   2x + y = 8")
+        _line(subst_guide, "  2.  Press Solve and select Substitution from the mode popup.")
+        _line(subst_guide, "  3.  A Values field appears — enter the values to test:")
+        _line(subst_guide, "          x = 3, y = 2     or     x = 5", mono=True)
+        _line(subst_guide, "  4.  Press Solve again. The result will be True, False, or Indeterminate.")
+        _line(subst_guide,
+              "Indeterminate means one or more variables were left unspecified, so the result "
+              "depends on those free values.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(8, 0))
 
-        modes = _section_card(center)
+        # 6. Symbol Pad
+        sympad_guide = _section_card(guide_content)
+        tk.Label(sympad_guide, text="Using the Symbol Pad", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(sympad_guide,
+              "The symbol pad inserts math characters directly into the input bar at the cursor position. "
+              "Open it by clicking the keyboard icon near the input bar.")
+        _line(sympad_guide, "Available symbols include: ÷  ×  √  π  ²  ³  and common operators.")
+        _line(sympad_guide,
+              "Both the symbol form (√, π) and the text form (sqrt, pi) are accepted by the solver.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(6, 0))
 
-        tk.Label(
-            modes,
-            text="Solve Modes",
-            font=section_font,
-            bg=p["STEP_BG"],
-            fg=p["ACCENT"],
-        ).pack(anchor="w", pady=(0, 8))
+        # 7. Sidebar & History
+        sidebar_guide = _section_card(guide_content)
+        tk.Label(sidebar_guide, text="Sidebar and History", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(sidebar_guide,
+              "Every solve is automatically saved. Open the sidebar with the ☰ icon at the top-left.")
+        _line(sidebar_guide, "From the sidebar you can:")
+        _line(sidebar_guide, "  •  Click any entry to reload that solve in the main results area.")
+        _line(sidebar_guide, "  •  Pin important solves to keep them at the top of the list.")
+        _line(sidebar_guide, "  •  Archive solves you want to keep but hide from the main list.")
+        _line(sidebar_guide, "  •  Delete entries you no longer need.")
+        _line(sidebar_guide, "  •  Use the search bar at the top of the sidebar to filter by equation text.")
+        _line(sidebar_guide,
+              "History is capped at 200 entries and persists between sessions.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(6, 0))
 
-        _line(modes, "- Symbolic (SymPy): exact values, fractions, and symbolic expressions.")
-        _line(modes, "- Numerical (NumPy): decimal approximations for linear equations.")
-        _line(modes, "- Substitution: checks whether provided values satisfy the equation.")
+        # 8. Exporting Results
+        export_guide = _section_card(guide_content)
+        tk.Label(export_guide, text="Exporting Results", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(export_guide, "After a solve completes, export buttons appear below the trail:")
+        _line(export_guide,
+              "  Copy to Clipboard — copies the full trail as plain text, ready to paste anywhere.")
+        _line(export_guide,
+              "  Export PDF        — saves a formatted PDF to a location you choose.")
+        _line(export_guide,
+              "  Export HTML       — saves an HTML file that can be opened in any web browser.")
+        _line(export_guide,
+              "All exports include every section: equation, method, steps, answer, verification, and summary.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(6, 0))
 
-        features = _section_card(center)
-
-        tk.Label(
-            features,
-            text="Key Features",
-            font=section_font,
-            bg=p["STEP_BG"],
-            fg=p["ACCENT"],
-        ).pack(anchor="w", pady=(0, 8))
-
-        feature_lines = [
-            "- Step-by-step solver trail with explanations.",
-            "- Verification section and validation status.",
-            "- Graph and case analysis panel for supported cases.",
-            "- Sidebar history with pin, archive, and delete actions.",
-            "- Settings for animation speed and auto-expand behavior.",
-            "- Symbol pad for quick equation typing.",
-            "- Export trail to clipboard text or PDF.",
+        # 9. Settings
+        settings_guide = _section_card(guide_content)
+        tk.Label(settings_guide, text="Settings", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(settings_guide, "Open Settings from the sidebar menu or the gear icon.")
+        settings_items = [
+            ("Theme",           "Switch between Light and Dark mode."),
+            ("Animation Speed", "Controls how fast the step cards animate in (Slow / Normal / Fast / Off)."),
+            ("Auto-Expand",     "When on, all result cards open automatically after solving."),
         ]
-        for line in feature_lines:
-            _line(features, line)
+        for label, desc in settings_items:
+            row_f = tk.Frame(settings_guide, bg=p["STEP_BG"])
+            row_f.pack(anchor="w", fill=tk.X, pady=(0, 4))
+            tk.Label(row_f, text=f"  {label:<20}", font=body_font, bg=p["STEP_BG"],
+                     fg=p["ACCENT"]).pack(side=tk.LEFT, anchor="nw")
+            tk.Label(row_f, text=desc, font=body_font, bg=p["STEP_BG"],
+                     fg=p["TEXT_BRIGHT"], justify=tk.LEFT, wraplength=680,
+                     anchor="nw").pack(side=tk.LEFT, anchor="nw")
+        _line(settings_guide, "Settings are saved between sessions.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(6, 0))
 
-        examples = _section_card(center)
+        # 10. Keyboard Shortcuts
+        shortcuts_guide = _section_card(guide_content)
+        tk.Label(shortcuts_guide, text="Keyboard Shortcuts", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        for key, desc in [
+            ("Enter",  "Submit / Solve the equation currently in the input bar."),
+            ("Escape", "Close the active panel (Settings, Help & About, or Sidebar)."),
+        ]:
+            row_f = tk.Frame(shortcuts_guide, bg=p["STEP_BG"])
+            row_f.pack(anchor="w", fill=tk.X, pady=(0, 6))
+            tk.Label(row_f, text=key, font=self._mono, bg=p["STEP_BG"],
+                     fg=p["ACCENT"], width=10, anchor="w").pack(side=tk.LEFT)
+            tk.Label(row_f, text=desc, font=body_font, bg=p["STEP_BG"],
+                     fg=p["TEXT_BRIGHT"], anchor="w").pack(side=tk.LEFT)
 
-        tk.Label(
-            examples,
-            text="Input Examples",
-            font=section_font,
-            bg=p["STEP_BG"],
-            fg=p["ACCENT"],
-        ).pack(anchor="w", pady=(0, 8))
+        # ── ABOUT TAB ────────────────────────────────────────────────────────────
 
-        _line(examples, "Single variable: 3x + 2 = 7", mono=True)
-        _line(examples, "Two variables: 2x + 4y = 1", mono=True)
-        _line(examples, "System: x + y = 10, x - y = 2", mono=True)
-        _line(examples, "Substitution values: x = 3, y = 4", mono=True)
-        _line(
-            examples,
-            "Use comma or semicolon to separate system equations.",
-            font=small_font,
-            fg=p["TEXT_DIM"],
-            pady=(6, 0),
-        )
+        intro = _section_card(about_content)
+        tk.Label(intro, text="What This App Is", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(intro, (
+            "DualSolver is a step-by-step solver for linear equations and "
+            "systems, designed for symbolic and numerical computation learning."
+        ))
+        _line(intro, (
+            "Course context: Numeric and Symbolic Computation (COSC 110), "
+            "Cavite State University – Imus."
+        ), font=small_font, fg=p["TEXT_DIM"], pady=(6, 0))
+        _line(intro,
+              "Standard output flow: GIVEN → METHOD → STEPS → FINAL ANSWER → VERIFICATION → SUMMARY",
+              font=small_font, fg=p["TEXT_DIM"], pady=(4, 0))
 
-        creators = _section_card(center)
+        tech = _section_card(about_content)
+        tk.Label(tech, text="Technology", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(tech, "  •  Python 3 — core language.")
+        _line(tech, "  •  Tkinter — native desktop GUI, no browser required.")
+        _line(tech, "  •  SymPy — symbolic math engine for exact solutions.")
+        _line(tech, "  •  NumPy — numerical engine for decimal approximations.")
+        _line(tech, "  •  Matplotlib — equation graph rendering.")
+        _line(tech, "Fully offline — no internet connection or accounts required.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(6, 0))
 
-        tk.Label(
-            creators,
-            text="Creators",
-            font=section_font,
-            bg=p["STEP_BG"],
-            fg=p["ACCENT"],
-        ).pack(anchor="w", pady=(0, 8))
-
-        _line(creators, "DualSolver Version: " + APP_VERSION, font=small_font,
-              fg=p["TEXT_DIM"], pady=(0, 8))
-
+        creators = _section_card(about_content)
+        tk.Label(creators, text="Creators", font=section_font,
+                 bg=p["STEP_BG"], fg=p["ACCENT"]).pack(anchor="w", pady=(0, 8))
+        _line(creators, "DualSolver Version: " + APP_VERSION,
+              font=small_font, fg=p["TEXT_DIM"], pady=(0, 8))
         for name in [
             "Acal, Lance Adrian",
             "Garcia, Jesly Dinsen",
             "Moreno, Ryel Austin",
         ]:
             _line(creators, name, pady=(0, 3))
+        _line(creators,
+              "Project focus: Symbolic and Numerical Computation to solve linear equations step by step.",
+              font=small_font, fg=p["TEXT_DIM"], pady=(6, 0))
 
-        _line(
-            creators,
-            "Project focus: Symbolic and Numerical Computation to solve linear equations step by step.",
-            font=small_font,
-            fg=p["TEXT_DIM"],
-            pady=(6, 0),
-        )
+        # Show User Guide tab by default.
+        guide_content.pack(fill=tk.X)
 
     def close_about_page(self) -> None:
         """Destroy the About page and restore the chat view."""
