@@ -15,21 +15,7 @@ venv/
 env/
 .env
 *.env.local
-
-# ──────────────── Node / npm ────────────────
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-.npm
-.yarn/
-package-lock.json
-
-# ──────────────── Vite / Build ────────────────
-frontend/dist/
-frontend/.vite/
-*.local
+.pytest_cache/
 
 # ──────────────── IDE / Editor ────────────────
 .vscode/*
@@ -39,17 +25,19 @@ frontend/.vite/
 *.swp
 *.swo
 *~
-.DS_Store
-Thumbs.db
 
 # ──────────────── OS ────────────────
 .DS_Store
+Thumbs.db
 Desktop.ini
 ehthumbs.db
+
+# ──────────────── Runtime data ────────────────
+data/
+!data/.gitkeep
 
 # ──────────────── Misc ────────────────
 *.log
 .cache/
 .temp/
 .tmp/
-data/

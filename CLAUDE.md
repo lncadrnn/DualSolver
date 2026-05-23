@@ -76,10 +76,6 @@ Theme colors are mutable module-level attributes on `gui.themes` (e.g. `themes.B
 
 `gui/storage.py` persists settings and solve history to `data/dualsolver.json` (relative to the project root). It handles corrupt-JSON recovery (falls back to defaults) and migrates a legacy `{"users": ..., "guest_settings": ...}` shape. History is capped at 200 entries. There is no cloud sync.
 
-### Stale file warning
-
-`head_app.py` at the project root is an older, near-duplicate copy of `gui/app.py`. It is **not** imported anywhere (`main.py` → `gui.__init__` → `gui.app`). Don't edit it — change `gui/app.py` instead. If touching the entry point, double-check imports point to `gui/app.py`.
-
 ## Conventions worth knowing
 
 - Input length is hard-capped at 500 chars (`_MAX_INPUT_LENGTH` in `solver/symbolic.py`); over that raises before parsing.

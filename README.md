@@ -1,34 +1,87 @@
 # DualSolver
 
-**Version:** 1.0.0
-**Course:** Numeric and Symbolic Computation (COSC 110) — Cavite State University, Imus
-
-DualSolver is a desktop learning tool that solves linear equations step by step.
-It supports three computation modes — **Symbolic** (exact), **Numerical** (decimal),
-and **Substitution** (verify values) — and explains every algebraic move it makes
-using the name of the property applied (Distributive, Subtraction Property of
-Equality, Combining Like Terms, etc.).
-
-The interface is a chat-style Tkinter app with a solid dark theme, six color
-palettes, animated solution trails, embedded Matplotlib graphs, case analysis,
-HTML/PDF export, and local solve history.
+A desktop step-by-step solver for linear equations, built for COSC 110 (Numeric and Symbolic Computation) at Cavite State University – Imus.
 
 ---
 
-## Highlights
+## Features
 
-- **Three modes in one solver** — Symbolic (SymPy), Numerical (NumPy), Substitution (verify a guess).
-- **Educational by design** — every step is labelled with the algebraic property it applies, every non-linear input gets an explanation of *why* it's non-linear and *what method would solve it* (Quadratic Formula, Newton's Method, etc.).
-- **Robust to messy input** — full-width characters, Unicode minus / multiplication / division, smart quotes, and look-alikes all normalize to ASCII before parsing.
-- **No accounts, no cloud** — every solve, every setting, every piece of history lives in a single local JSON file.
-- **Exportable** — copy as plain text, save as HTML, or save as PDF (with embedded graph image and a "Result Interpretation" metadata block).
+- **Three solve modes** — Symbolic (SymPy, exact fractions/expressions), Numerical (NumPy, decimal approximations), and Substitution (verify whether specific values satisfy an equation).
+- **Educational step trail** — every derivation step is labelled with the algebraic property applied (Distributive Property, Subtraction Property of Equality, Combining Like Terms, etc.).
+- **Graph & Analysis card** — Matplotlib plot and case classification for single-variable linear equations.
+- **Non-linear education** — non-linear inputs are detected and explained with the method that _would_ solve them (Quadratic Formula, Newton's Method, etc.) rather than crashing.
+- **Export** — copy trail as plain text, save as HTML, or save as PDF with an embedded graph and result-interpretation block.
+- **Solve history sidebar** — pin, archive, delete, and search past solves; capped at 200 entries, persists across sessions.
 - **Six palettes** — Ocean Blue, Obsidian Black, Emerald Green, Sunset Orange, Crimson Red, Violet.
+- **Robust input normalization** — full-width characters, Unicode minus/multiplication/division variants, smart quotes, and π/√ all normalize to ASCII before parsing.
+- **Fully offline** — no accounts, no telemetry, no network calls. Everything lives in a single local JSON file.
+
+---
+
+## Project Structure
+
+```text
+DualSolver/
+├── main.py                  # Three-line entry point
+├── CLAUDE.md                # Codebase guide for Claude Code
+├── README.md
+├── requirements.txt         # Runtime dependencies
+├── requirements-dev.txt     # Dev/test dependencies (pytest)
+├── .gitignore
+│
+├── gui/                     # Tkinter UI layer — no computation here
+│   ├── __init__.py
+│   ├── app.py               #   DualSolverApp (assembles all mixins)
+│   ├── animation.py         #   AnimationMixin — animated step-card rendering
+│   ├── widgets.py           #   WidgetMixin — section headers, cards, fraction renderer
+│   ├── export.py            #   ExportMixin — clipboard / HTML / PDF export
+│   ├── symbolpad.py         #   SymbolPadMixin — math symbol insertion pad
+│   ├── settings.py          #   SettingsMixin — theme & animation preferences
+│   ├── about.py             #   AboutMixin — in-app Help & About / User Guide
+│   ├── sidebar.py           #   Sidebar — history panel (pin / archive / delete)
+│   ├── storage.py           #   JSON persistence (data/dualsolver.json)
+│   ├── themes.py            #   Six palette dicts + mutable colour shortcuts
+│   ├── rounded.py           #   Hand-drawn rounded frame/button widgets
+│   └── error_messages.py    #   Educational error text for solver failures
+│
+├── solver/                  # Pure Python computation — no Tkinter imports
+│   ├── __init__.py
+│   ├── engine.py            #   Mode dispatcher + backward-compat re-exports
+│   ├── symbolic.py          #   SymPy solver (single-var, multi-var, system)
+│   ├── numerical.py         #   NumPy solver (decimal results)
+│   ├── substitution.py      #   Substitution verifier
+│   └── graph.py             #   Matplotlib figures + case analysis
+│
+├── tests/                   # Pytest suite (110 collected, target ~107 passing)
+│   ├── conftest.py          #   Sets Agg backend, prepends root to sys.path
+│   ├── VALIDATION_RULES.md  #   Trail output contract (type map + validation rules)
+│   └── test_*.py            #   8 test files covering math, storage, themes, graphs
+│
+├── assets/                  # Static assets
+│   ├── logo.png
+│   └── back.png
+│
+├── data/                    # Runtime data — gitignored except .gitkeep
+│   └── .gitkeep
+│
+└── docs/                    # Documentation
+    ├── user_guide.md        #   End-user guide (source of truth for in-app help)
+    ├── process.md           #   Implementation walkthrough
+    └── TESTING.md           #   Test plan and manual checklist
+```
 
 ---
 
 ## Setup
 
-### 1. Create and activate a virtual environment
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/lncadrnn/SymSolver.git
+cd SymSolver
+```
+
+### 2. Create and activate a virtual environment
 
 **Windows (PowerShell):**
 
@@ -38,26 +91,26 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 .\.venv\Scripts\Activate.ps1
 ```
 
-**macOS / Linux (bash / zsh):**
+**macOS / Linux:**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 2. Install dependencies
+### 3. Install runtime dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Optional logo support (without it, the header shows a text label):
+Optional — enables the PNG logo in the header (falls back to a text label without it):
 
 ```bash
 pip install pillow
 ```
 
-### 3. Launch the app
+### 4. Launch the app
 
 ```bash
 python main.py
@@ -65,174 +118,48 @@ python main.py
 
 ---
 
-## Dependencies
+## Running Tests
 
-| Package      | Min version | Purpose                                  |
-| ------------ | ----------- | ---------------------------------------- |
-| `sympy`      | 1.13        | Symbolic algebra engine                  |
-| `numpy`      | 1.26        | Numerical linear algebra (matrix solve)  |
-| `matplotlib` | 3.8         | Graph rendering inside the app           |
-| `fpdf2`      | 2.8         | PDF export                               |
-| `pytest`     | 8.0         | Automated test runner                    |
-| `pillow`     | *(opt.)*    | Header logo (PNG); falls back to a label |
-
-Tkinter ships with standard CPython on Windows and macOS — no separate install needed.
-
----
-
-## Usage
-
-1. Type a linear equation in the input bar.
-2. Press **Enter** or click **Solve**.
-3. Pick a computation mode in the modal:
-   - **Symbolic** — exact answers using fractions / radicals / π (SymPy).
-   - **Numerical** — decimal approximations (NumPy).
-   - **Substitution** — provide variable values, then verify whether the equation holds.
-4. Read the animated step-by-step trail. Each step shows the algebraic property used.
-5. Expand the **Graph & Analysis** card for a visual + case classification.
-6. Use **Copy to Clipboard**, **Save as HTML**, or **Save as PDF** to export.
-7. Open the **sidebar** (hamburger ☰) for history (pin / archive / delete / clear).
-8. **Settings** lets you switch palettes, change animation speed, and toggle auto-expand of verification / graph sections.
-9. **About / Help** lives behind the `?` button in the header.
-
-### Keyboard shortcuts
-
-| Key      | Action                                              |
-| -------- | --------------------------------------------------- |
-| `Enter`  | Submit current input — opens the mode picker        |
-| `Escape` | Close Settings / About / sidebar (context-aware)    |
-
-### Supported input patterns
-
-| Pattern                          | Example                  |
-| -------------------------------- | ------------------------ |
-| Single-variable linear equation  | `3x + 2 = 7`             |
-| Single equation, many variables  | `2x + 4y = 1`            |
-| System of equations              | `x + y = 10, x - y = 2`  |
-| Substitution values              | `x = 3` or `x = 3, y = 4`|
-| With constants π and √           | `x + π = 10`             |
-| With fractions                   | `(1/2)x + 1 = 3`         |
-| With decimal coefficients        | `0.5x + 1 = 3`           |
-
-**Accepted operators and characters:** `+ - * / ^ = ( ) [ ] { } . , ; :`
-plus single-letter variable names.
-
-**Auto-normalized:** full-width characters (`２ｘ ＝ ４` → `2x = 4`),
-Unicode minus / dash variants (`−`, `–`, `—`), multiplication / division
-signs (`×`, `÷`), smart quotes, and π / √.
-
----
-
-## Output contract
-
-Every solve returns a dictionary with this structure:
-
-```
-equation, given, method, steps, final_answer, verification_steps, summary
-```
-
-- Each `steps[]` and `verification_steps[]` entry carries `step_number`,
-  `description`, `expression`, `explanation`, and a `property` field naming
-  the algebraic rule applied (e.g. *"Subtraction Property of Equality"*).
-- `method.parameters` carries an `equation_type_code` — a machine-readable
-  classifier (`linear_single_var`, `linear_system_2x2`,
-  `linear_degenerate_identity`, `nonlinear_degree`, `nonlinear_denominator`,
-  `nonlinear_product`, `nonlinear_transcendental`, `constant_tautology`,
-  `constant_contradiction`, `substitution_true` / `_false` / `_indeterminate`).
-- `summary` always includes `runtime_ms`, `total_steps`, `verification_steps`,
-  `validation_status` (`"pass"` / `"fail"`), `timestamp`, and `library`.
-- Non-linear inputs return `nonlinear_education: True` and a `validation_status`
-  of `"fail"` — these are *educational responses*, not errors. The
-  `final_answer` ends with a `→ ...` method-suggestion line.
-
-Full validation rules and type maps: [`tests/VALIDATION_RULES.md`](tests/VALIDATION_RULES.md).
-
----
-
-## Project structure
-
-```text
-DualSolver/
-├─ main.py              # Three-line entry point
-├─ requirements.txt
-├─ README.md
-├─ process.md           # Implementation walkthrough
-├─ TESTING.md           # Test plan and manual checklist
-├─ CLAUDE.md            # Codebase guide
-├─ assets/              # Logo
-├─ data/                # Local JSON (auto-created on first run)
-├─ gui/                 # Tkinter UI (mixin-based)
-│  ├─ app.py            #   Main window
-│  ├─ animation.py      #   Step-by-step animated rendering
-│  ├─ widgets.py        #   Section headers, cards, fraction renderer
-│  ├─ export.py         #   Clipboard / HTML / PDF export
-│  ├─ symbolpad.py      #   Symbol pad (≤, ≥, π, √, etc.)
-│  ├─ settings.py       #   Theme + animation preferences
-│  ├─ about.py          #   In-app Help & About
-│  ├─ sidebar.py        #   History sidebar
-│  ├─ storage.py        #   data/dualsolver.json persistence
-│  ├─ themes.py         #   Six palette dicts + mutable shortcuts
-│  └─ rounded.py        #   Hand-drawn rounded frame/button widgets
-└─ solver/              # Pure Python — no Tkinter imports
-   ├─ engine.py         #   Mode dispatcher
-   ├─ symbolic.py       #   SymPy solver (single var, multi-var, system)
-   ├─ numerical.py      #   NumPy solver (decimal results)
-   ├─ substitution.py   #   Substitution verifier
-   └─ graph.py          #   Matplotlib figures + case analysis
-```
-
----
-
-## Testing
+Install dev dependencies first (once):
 
 ```bash
-pytest                                    # all tests
-pytest -v                                 # verbose
-pytest tests/test_engine_unit.py          # one file
-pytest -k "test_solve_linear_equation"    # by name pattern
+pip install -r requirements-dev.txt
 ```
 
-Target: **~97 passing tests** across eight files covering math correctness,
-data validation, error handling, theming, graph generation, edge cases,
-and the Phase-1 educational additions (property names, equation-type codes,
-non-linear method hints, full substitution trail). See
-[`TESTING.md`](TESTING.md) for the full test plan and manual checklist.
+```bash
+pytest                                          # all tests, quiet
+pytest -v                                       # verbose output
+pytest tests/test_engine_unit.py                # single file
+pytest -k "test_solve_linear_equation"          # by name pattern
+```
+
+`tests/conftest.py` sets `matplotlib.use("Agg")` and prepends the project root to `sys.path` so tests run headless without a display. Do not set a real Matplotlib backend in tests.
 
 ---
 
-## Data storage & privacy
+## Architecture
 
-- All history and settings live in `data/dualsolver.json` (relative to the project root).
-- No login, no telemetry, no cloud, no network calls.
-- History is capped at 200 entries (oldest fall off automatically).
-- The data file is human-readable; if it gets corrupted, the app falls back to defaults instead of crashing.
+The codebase follows a strict two-layer split.
 
----
+**Solver layer (`solver/`)** — pure Python, no Tkinter imports. `engine.py` is the single dispatch entry point: it routes by `mode` to `symbolic.py` (SymPy, exact answers), `numerical.py` (NumPy, decimal approximations), or `substitution.py` (value verification). `graph.py` builds Matplotlib figures from solver results. This layer is safe to import from tests or any Python context.
 
-## Limitations (by design)
+**GUI layer (`gui/`)** — Tkinter UI, imports `solver/`, never the other way around. `DualSolverApp` in `app.py` is assembled from six mixins (`AnimationMixin`, `WidgetMixin`, `ExportMixin`, `SymbolPadMixin`, `SettingsMixin`, `AboutMixin`) that keep features isolated by concern. Solves run on a background daemon thread; results are marshalled back to the main thread via `self.after(0, ...)`. Theme colors are live module-level attributes on `gui.themes` — reading `themes.BG` always returns the current palette value.
 
-| Area                | What's not supported                                                                                              |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Equation type**   | Linear equations only. Quadratic / cubic / higher-degree, transcendental (`sin`, `cos`, `log`, `exp`), variables in denominators (`1/x`), and products of variables (`x·y`) are detected and explained but not solved. |
-| **Visual style**    | Solid opaque panels by design — no OS blur / acrylic / mica effects.                                              |
-| **Logo display**    | Requires `pillow`. Without it, the header shows a text label.                                                     |
-| **Offline only**    | No cloud sync, no multi-device support, no account system.                                                        |
-| **History cap**     | 200 entries maximum.                                                                                              |
-| **Input length**    | 500 characters maximum per solve (`_MAX_INPUT_LENGTH` in `solver/symbolic.py`).                                   |
-| **Themes**          | Six dark palettes. No light mode — the app is intentionally a dark-only experience.                              |
+**Trail output contract** — every solve returns a dict with seven keys: `equation`, `given`, `method`, `steps`, `final_answer`, `verification_steps`, `summary`. Every step carries a `property` field naming the algebraic rule applied. The full schema and type map are in `tests/VALIDATION_RULES.md`.
+
+**Storage** — `gui/storage.py` persists settings and history to `data/dualsolver.json`. History is capped at 200 entries; the file auto-recovers from corruption.
+
+See `CLAUDE.md` for exhaustive detail on conventions, edge-case handling, and Phase-1 schema additions.
 
 ---
 
-## Troubleshooting
+## Export Formats
 
-| Symptom                                            | Fix                                                                                          |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `Parse error` on a valid-looking equation          | Ensure there is exactly one `=`; check for stray operators or unbalanced parentheses.        |
-| App treats `x^2 + 1 = 0` as an error               | This is intentional — non-linear inputs return an educational explanation, not a solution.   |
-| `Save as PDF` fails with a missing-module error    | Re-run `pip install -r requirements.txt`; the project requires `fpdf2 >= 2.8`.               |
-| Header shows a text label instead of a logo        | Install Pillow: `pip install pillow`.                                                        |
-| Pasting `２ｘ ＝ ４` gives "Invalid character"        | Update to v1.0+ — full-width characters are normalized to ASCII automatically.               |
-| Settings reset themselves after a crash            | `data/dualsolver.json` was corrupted and rebuilt from defaults — your work isn't lost in memory; just re-export. |
+| Format | How to trigger | Contents |
+|---|---|---|
+| **Plain text** | Copy to Clipboard | Full solve trail as UTF-8 text; paste into any editor or document. |
+| **HTML** | Save as HTML | Self-contained HTML file with all trail sections and inline styling; open in any browser. |
+| **PDF** | Save as PDF | Formatted PDF via fpdf2 with embedded graph image and a Result Interpretation metadata block. |
 
 ---
 
@@ -243,3 +170,9 @@ non-linear method hints, full substitution trail). See
 - **Moreno, Ryel Austin**
 
 Built for COSC 110 — Numeric and Symbolic Computation, Cavite State University Imus, AY 2025–2026.
+
+---
+
+## License
+
+All rights reserved. Academic use only.
