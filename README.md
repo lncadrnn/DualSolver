@@ -6,15 +6,15 @@ A desktop step-by-step solver for linear equations, built for COSC 110 (Numeric 
 
 ## Features
 
-- **Three solve modes** — Symbolic (SymPy, exact fractions/expressions), Numerical (NumPy, decimal approximations), and Substitution (verify whether specific values satisfy an equation).
-- **Educational step trail** — every derivation step is labelled with the algebraic property applied (Distributive Property, Subtraction Property of Equality, Combining Like Terms, etc.).
-- **Graph & Analysis card** — Matplotlib plot and case classification for single-variable linear equations.
-- **Non-linear education** — non-linear inputs are detected and explained with the method that _would_ solve them (Quadratic Formula, Newton's Method, etc.) rather than crashing.
-- **Export** — copy trail as plain text, save as HTML, or save as PDF with an embedded graph and result-interpretation block.
-- **Solve history sidebar** — pin, archive, delete, and search past solves; capped at 200 entries, persists across sessions.
-- **Six palettes** — Ocean Blue, Obsidian Black, Emerald Green, Sunset Orange, Crimson Red, Violet.
-- **Robust input normalization** — full-width characters, Unicode minus/multiplication/division variants, smart quotes, and π/√ all normalize to ASCII before parsing.
-- **Fully offline** — no accounts, no telemetry, no network calls. Everything lives in a single local JSON file.
+- **Three solve modes** - Symbolic (SymPy, exact fractions/expressions), Numerical (NumPy, decimal approximations), and Substitution (verify whether specific values satisfy an equation).
+- **Educational step trail** - every derivation step is labelled with the algebraic property applied (Distributive Property, Subtraction Property of Equality, Combining Like Terms, etc.).
+- **Graph & Analysis card** - Matplotlib plot and case classification for single-variable linear equations.
+- **Non-linear education** - non-linear inputs are detected and explained with the method that _would_ solve them (Quadratic Formula, Newton's Method, etc.) rather than crashing.
+- **Export** - copy trail as plain text, save as HTML, or save as PDF with an embedded graph and result-interpretation block.
+- **Solve history sidebar** - pin, archive, delete, and search past solves; capped at 200 entries, persists across sessions.
+- **Six palettes** - Ocean Blue, Obsidian Black, Emerald Green, Sunset Orange, Crimson Red, Violet.
+- **Robust input normalization** - full-width characters, Unicode minus/multiplication/division variants, smart quotes, and π/√ all normalize to ASCII before parsing.
+- **Fully offline** - no accounts, no telemetry, no network calls. Everything lives in a single local JSON file.
 
 ---
 
@@ -28,22 +28,22 @@ DualSolver/
 ├── requirements-dev.txt     # Dev/test dependencies (pytest)
 ├── .gitignore
 │
-├── gui/                     # Tkinter UI layer — no computation here
+├── gui/                     # Tkinter UI layer - no computation here
 │   ├── __init__.py
 │   ├── app.py               #   DualSolverApp (assembles all mixins)
-│   ├── animation.py         #   AnimationMixin — animated step-card rendering
-│   ├── widgets.py           #   WidgetMixin — section headers, cards, fraction renderer
-│   ├── export.py            #   ExportMixin — clipboard / HTML / PDF export
-│   ├── symbolpad.py         #   SymbolPadMixin — math symbol insertion pad
-│   ├── settings.py          #   SettingsMixin — theme & animation preferences
-│   ├── about.py             #   AboutMixin — in-app Help & About / User Guide
-│   ├── sidebar.py           #   Sidebar — history panel (pin / archive / delete)
+│   ├── animation.py         #   AnimationMixin - animated step-card rendering
+│   ├── widgets.py           #   WidgetMixin - section headers, cards, fraction renderer
+│   ├── export.py            #   ExportMixin - clipboard / HTML / PDF export
+│   ├── symbolpad.py         #   SymbolPadMixin - math symbol insertion pad
+│   ├── settings.py          #   SettingsMixin - theme & animation preferences
+│   ├── about.py             #   AboutMixin - in-app Help & About / User Guide
+│   ├── sidebar.py           #   Sidebar - history panel (pin / archive / delete)
 │   ├── storage.py           #   JSON persistence (data/dualsolver.json)
 │   ├── themes.py            #   Six palette dicts + mutable colour shortcuts
 │   ├── rounded.py           #   Hand-drawn rounded frame/button widgets
 │   └── error_messages.py    #   Educational error text for solver failures
 │
-├── solver/                  # Pure Python computation — no Tkinter imports
+├── solver/                  # Pure Python computation - no Tkinter imports
 │   ├── __init__.py
 │   ├── engine.py            #   Mode dispatcher + backward-compat re-exports
 │   ├── symbolic.py          #   SymPy solver (single-var, multi-var, system)
@@ -60,7 +60,7 @@ DualSolver/
 │   ├── logo.png
 │   └── back.png
 │
-├── data/                    # Runtime data — gitignored except .gitkeep
+├── data/                    # Runtime data - gitignored except .gitkeep
 │   └── .gitkeep
 │
 └── docs/                    # Documentation
@@ -103,7 +103,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Optional — enables the PNG logo in the header (falls back to a text label without it):
+Optional - enables the PNG logo in the header (falls back to a text label without it):
 
 ```bash
 pip install pillow
@@ -140,13 +140,13 @@ pytest -k "test_solve_linear_equation"          # by name pattern
 
 The codebase follows a strict two-layer split.
 
-**Solver layer (`solver/`)** — pure Python, no Tkinter imports. `engine.py` is the single dispatch entry point: it routes by `mode` to `symbolic.py` (SymPy, exact answers), `numerical.py` (NumPy, decimal approximations), or `substitution.py` (value verification). `graph.py` builds Matplotlib figures from solver results. This layer is safe to import from tests or any Python context.
+**Solver layer (`solver/`)** - pure Python, no Tkinter imports. `engine.py` is the single dispatch entry point: it routes by `mode` to `symbolic.py` (SymPy, exact answers), `numerical.py` (NumPy, decimal approximations), or `substitution.py` (value verification). `graph.py` builds Matplotlib figures from solver results. This layer is safe to import from tests or any Python context.
 
-**GUI layer (`gui/`)** — Tkinter UI, imports `solver/`, never the other way around. `DualSolverApp` in `app.py` is assembled from six mixins (`AnimationMixin`, `WidgetMixin`, `ExportMixin`, `SymbolPadMixin`, `SettingsMixin`, `AboutMixin`) that keep features isolated by concern. Solves run on a background daemon thread; results are marshalled back to the main thread via `self.after(0, ...)`. Theme colors are live module-level attributes on `gui.themes` — reading `themes.BG` always returns the current palette value.
+**GUI layer (`gui/`)** - Tkinter UI, imports `solver/`, never the other way around. `DualSolverApp` in `app.py` is assembled from six mixins (`AnimationMixin`, `WidgetMixin`, `ExportMixin`, `SymbolPadMixin`, `SettingsMixin`, `AboutMixin`) that keep features isolated by concern. Solves run on a background daemon thread; results are marshalled back to the main thread via `self.after(0, ...)`. Theme colors are live module-level attributes on `gui.themes` - reading `themes.BG` always returns the current palette value.
 
-**Trail output contract** — every solve returns a dict with seven keys: `equation`, `given`, `method`, `steps`, `final_answer`, `verification_steps`, `summary`. Every step carries a `property` field naming the algebraic rule applied. The full schema and type map are in `tests/VALIDATION_RULES.md`.
+**Trail output contract** - every solve returns a dict with seven keys: `equation`, `given`, `method`, `steps`, `final_answer`, `verification_steps`, `summary`. Every step carries a `property` field naming the algebraic rule applied. The full schema and type map are in `tests/VALIDATION_RULES.md`.
 
-**Storage** — `gui/storage.py` persists settings and history to `data/dualsolver.json`. History is capped at 200 entries; the file auto-recovers from corruption.
+**Storage** - `gui/storage.py` persists settings and history to `data/dualsolver.json`. History is capped at 200 entries; the file auto-recovers from corruption.
 
 ---
 
@@ -166,7 +166,7 @@ The codebase follows a strict two-layer split.
 - **Garcia, Jesly Dinsen**
 - **Moreno, Ryel Austin**
 
-Built for COSC 110 — Numeric and Symbolic Computation, Cavite State University Imus, AY 2025–2026.
+Built for COSC 110 - Numeric and Symbolic Computation, Cavite State University Imus, AY 2025–2026.
 
 ---
 
