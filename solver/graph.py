@@ -402,8 +402,12 @@ def _analyze_system(inputs, final) -> dict:
     if len(eq_parts) < 2:
         return None
 
+    # Track per-line slope info so we can quote it in the description.
+    slope1 = slope2 = None
+    intercept1 = intercept2 = None
+
     try:
-        from sympy import Rational, Matrix
+        from sympy import Rational, Matrix, nsimplify
         lhs1, rhs1, loc1 = _parse_eq(eq_parts[0].strip())
         lhs2, rhs2, loc2 = _parse_eq(eq_parts[1].strip())
         xsym = symbols(xn); ysym = symbols(yn)
@@ -411,6 +415,19 @@ def _analyze_system(inputs, final) -> dict:
         e2 = (lhs2 - rhs2).expand()
         a1 = e1.coeff(xsym); b1 = e1.coeff(ysym); c1 = -e1.subs([(xsym,0),(ysym,0)])
         a2 = e2.coeff(xsym); b2 = e2.coeff(ysym); c2 = -e2.subs([(xsym,0),(ysym,0)])
+
+        # Compute slope-intercept form when possible (y = mx + k).
+        # The line a*x + b*y = c rewrites to y = (c - a*x) / b, so
+        # slope m = -a/b and intercept k = c/b (requires b != 0).
+        try:
+            if b1 != 0:
+                slope1     = -a1 / b1
+                intercept1 = c1 / b1
+            if b2 != 0:
+                slope2     = -a2 / b2
+                intercept2 = c2 / b2
+        except Exception:
+            pass
 
         # Build augmented matrix determinant-style checks
         det = a1*b2 - a2*b1
@@ -434,6 +451,25 @@ def _analyze_system(inputs, final) -> dict:
         else:
             case = "one_solution"
 
+    # Short text for the slopes (empty string if either is unknown)
+    def _fmt_slope(s):
+        try:
+            return str(s)
+        except Exception:
+            return "?"
+    slopes_line = ""
+    if slope1 is not None and slope2 is not None:
+        slopes_line = (
+            f"Slopes: line 1 has slope {_fmt_slope(slope1)}, "
+            f"line 2 has slope {_fmt_slope(slope2)}.\n"
+        )
+    intercepts_line = ""
+    if intercept1 is not None and intercept2 is not None:
+        intercepts_line = (
+            f"y-intercepts: line 1 = {_fmt_slope(intercept1)}, "
+            f"line 2 = {_fmt_slope(intercept2)}.\n"
+        )
+
     eq1_s = eq_parts[0].strip()
     eq2_s = eq_parts[1].strip()
 
@@ -448,8 +484,10 @@ def _analyze_system(inputs, final) -> dict:
             "description": (
                 f"The two lines have different slopes, so they intersect\n"
                 f"at exactly one point. There is a unique ({xn}, {yn}) pair\n"
-                f"that satisfies both equations simultaneously."
-            ),
+                f"that satisfies both equations simultaneously.\n"
+                f"{slopes_line}"
+                f"{intercepts_line}"
+            ).rstrip("\n"),
             "detail":   f"det([a₁b₂ − a₂b₁]) ≠ 0   →   unique intersection",
             "solution": sol_str,
             "graphable": True,
@@ -462,9 +500,11 @@ def _analyze_system(inputs, final) -> dict:
             "form":       f"a₁{xn} + b₁{yn} = c₁\na₂{xn} + b₂{yn} = c₂",
             "description": (
                 f"The two lines are parallel — they have the same slope\n"
-                f"but different intercepts, so they never intersect.\n"
-                f"No ({xn}, {yn}) pair satisfies both equations."
-            ),
+                f"but different y-intercepts, so they never intersect.\n"
+                f"No ({xn}, {yn}) pair satisfies both equations.\n"
+                f"{slopes_line}"
+                f"{intercepts_line}"
+            ).rstrip("\n"),
             "detail":   f"a₁/a₂ = b₁/b₂  but  c₁/c₂ ≠ a₁/a₂   →   parallel lines",
             "solution": "No solution",
             "graphable": True,
@@ -476,10 +516,12 @@ def _analyze_system(inputs, final) -> dict:
         "case_label": "Dependent System — Infinitely Many Solutions",
         "form":       f"a₁{xn} + b₁{yn} = c₁\na₂{xn} + b₂{yn} = c₂",
         "description": (
-            f"Both equations represent the same line.\n"
-            f"Every point on that line satisfies both equations,\n"
-            f"so there are infinitely many solutions."
-        ),
+            f"Both equations represent the SAME line (one is a multiple\n"
+            f"of the other). Every point on that line satisfies both,\n"
+            f"so there are infinitely many solutions.\n"
+            f"{slopes_line}"
+            f"{intercepts_line}"
+        ).rstrip("\n"),
         "detail":   f"a₁/a₂ = b₁/b₂ = c₁/c₂   →   same line",
         "solution": f"All points on the line  {eq1_s}",
         "graphable": True,

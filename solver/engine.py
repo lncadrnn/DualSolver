@@ -47,7 +47,9 @@ from solver.symbolic import (                         # noqa: F401
     _nonlinear_error_result,
     _count_terms_in_str,
     _validate_characters,
+    _validate_equation_structure,
     _validate_input_length,
+    _normalize_unicode,
     _solve_constant_equation,
     _append_solution_step,
     # Original solver (symbolic)

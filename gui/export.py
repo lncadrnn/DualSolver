@@ -53,6 +53,88 @@ class ExportMixin:
             compact = "equation"
         return compact[:60]
 
+    # ── Result-interpretation metadata (used by every export format) ───
+
+    # Human-readable expansions for the machine-friendly
+    # `equation_type_code` field on each result.method.parameters.
+    _EQ_TYPE_HUMAN = {
+        "linear_single_var":                "Linear equation, one variable",
+        "linear_multi_var":                 "Linear equation, multiple variables",
+        "linear_degenerate":                "Linear equation (degenerate — variable cancelled)",
+        "linear_degenerate_identity":       "Identity — every value of the variable satisfies it",
+        "linear_degenerate_contradiction":  "Contradiction — no value of the variable satisfies it",
+        "linear_system_2x2":                "System of 2 linear equations in 2 unknowns",
+        "linear_system_general":            "System of linear equations",
+        "linear_system_inconsistent":       "Inconsistent system — no solution",
+        "linear_system_singular_numeric":   "Singular system — no unique numerical solution",
+        "constant_tautology":               "Constant tautology (no variable, always true)",
+        "constant_contradiction":           "Constant contradiction (no variable, always false)",
+        "nonlinear_degree":                 "Non-linear — polynomial of degree > 1",
+        "nonlinear_denominator":            "Non-linear — variable appears in a denominator",
+        "nonlinear_product":                "Non-linear — product of two or more variables",
+        "nonlinear_transcendental":         "Non-linear — transcendental function on a variable",
+        "substitution_true":                "Substitution verified — values satisfy the equation",
+        "substitution_false":               "Substitution failed — values do not satisfy the equation",
+        "substitution_indeterminate":       "Substitution incomplete — equation has free variables",
+    }
+
+    def _interpretation_metadata(self, result: dict) -> dict:
+        """Pull standardised metadata used by the export 'Result Interpretation'
+        section. Returns plain strings — exporters format them themselves.
+
+        Keys:
+          equation_type      – human label (e.g. 'Linear equation, one variable')
+          equation_type_code – machine code (e.g. 'linear_single_var')
+          mode               – 'Symbolic' / 'Numerical' / 'Substitution'
+          library            – SymPy/NumPy version string
+          validation_status  – 'PASS' / 'FAIL'
+          timestamp          – wall-clock time the solve happened
+          interpretation     – 1–2 sentence prose summary derived from
+                               graph analysis when available.
+        """
+        method = result.get("method", {}) or {}
+        params = method.get("parameters", {}) or {}
+        summary = result.get("summary", {}) or {}
+
+        code = str(params.get("equation_type_code") or "").strip()
+        human = self._EQ_TYPE_HUMAN.get(code) or str(params.get("equation_type") or "Unclassified")
+
+        mode = self._result_type_label(result)
+        validation = str(summary.get("validation_status", "?")).upper()
+
+        # Build the prose interpretation. Prefer the graph analyzer's
+        # description (it already classifies one_solution / no_solution /
+        # infinite); fall back to the final_answer text when unavailable.
+        interpretation = ""
+        try:
+            from solver.graph import analyze_result
+            analysis = analyze_result(result)
+            if analysis:
+                bits = [analysis.get("case_label", "").strip()]
+                desc = (analysis.get("description") or "").strip()
+                if desc:
+                    # Compress multi-line description into one line
+                    desc = re.sub(r'\s+', ' ', desc)
+                    bits.append(desc)
+                interpretation = " — ".join(b for b in bits if b)
+        except Exception:
+            interpretation = ""
+
+        if not interpretation:
+            # Fall back to first non-empty line of the final answer
+            fa = str(result.get("final_answer", "")).strip()
+            interpretation = fa.split("\n", 1)[0] if fa else ""
+
+        return {
+            "equation_type":      human,
+            "equation_type_code": code or "unknown",
+            "mode":               mode,
+            "library":            str(summary.get("library", "?")),
+            "validation_status":  validation,
+            "timestamp":          str(summary.get("timestamp", "?")),
+            "interpretation":     interpretation,
+        }
+
     def _default_export_basename(self, result: dict) -> str:
         """Build base filename in DualSolver-Type-Equation format."""
         mode = self._result_type_label(result)
@@ -106,6 +188,18 @@ class ExportMixin:
         # FINAL ANSWER
         lines.append("\n── FINAL ANSWER ───────────────────────────")
         lines.append(f"  {self._frac_to_plain(result.get('final_answer', '?'))}")
+
+        # RESULT INTERPRETATION (metadata block for graders / reviewers)
+        meta = self._interpretation_metadata(result)
+        lines.append("\n── RESULT INTERPRETATION ──────────────────")
+        lines.append(f"  Equation Type:     {meta['equation_type']}")
+        lines.append(f"  Type Code:         {meta['equation_type_code']}")
+        lines.append(f"  Mode:              {meta['mode']}")
+        lines.append(f"  Library:           {meta['library']}")
+        lines.append(f"  Validation Status: {meta['validation_status']}")
+        lines.append(f"  Solved At:         {meta['timestamp']}")
+        if meta['interpretation']:
+            lines.append(f"  Interpretation:    {self._frac_to_plain(meta['interpretation'])}")
 
         # VERIFICATION
         v_steps = result.get("verification_steps", [])
@@ -381,6 +475,27 @@ class ExportMixin:
                 '</section>'
             )
 
+        # Result interpretation block — high-level metadata for graders
+        meta = self._interpretation_metadata(result)
+        interpretation_rows = [
+            f'<div class="kv"><span class="k">Equation Type</span><span class="v">{_esc(meta["equation_type"])}</span></div>',
+            f'<div class="kv"><span class="k">Type Code</span><span class="v mono">{_esc(meta["equation_type_code"])}</span></div>',
+            f'<div class="kv"><span class="k">Mode</span><span class="v">{_esc(meta["mode"])}</span></div>',
+            f'<div class="kv"><span class="k">Library</span><span class="v">{_esc(meta["library"])}</span></div>',
+            f'<div class="kv"><span class="k">Validation Status</span><span class="v">{_esc(meta["validation_status"])}</span></div>',
+            f'<div class="kv"><span class="k">Solved At</span><span class="v">{_esc(meta["timestamp"])}</span></div>',
+        ]
+        if meta["interpretation"]:
+            interpretation_rows.append(
+                f'<div class="line answer"><span class="k">Interpretation:</span> {_esc(meta["interpretation"])}</div>'
+            )
+        interpretation_block = (
+            '<section class="section">'
+            '<h2>Result Interpretation</h2>'
+            f'{"".join(interpretation_rows)}'
+            '</section>'
+        )
+
         html_text = (
             "<!doctype html>\n"
             "<html lang=\"en\">\n"
@@ -437,6 +552,7 @@ class ExportMixin:
             "      <h2>Final Answer</h2>\n"
             f"      <div class=\"answer-box mono\">{_esc(result.get('final_answer', '?'))}</div>\n"
             "    </section>\n"
+            f"    {interpretation_block}\n"
             f"    {verification_block}\n"
             f"    {graph_analysis_block}\n"
             f"    {summary_block}\n"
@@ -574,6 +690,25 @@ class ExportMixin:
         pdf.set_font(_mono, "", 14)
         pdf.set_text_color(76, 175, 80)
         pdf.cell(0, 10, safe(frac(result.get("final_answer", "?"))), new_x="LMARGIN", new_y="NEXT")
+
+        # ── RESULT INTERPRETATION ───────────────────────────────────
+        _meta = self._interpretation_metadata(result)
+        _section("RESULT INTERPRETATION")
+        _label_value("Equation Type", _meta["equation_type"])
+        _label_value("Type Code", _meta["equation_type_code"])
+        _label_value("Mode", _meta["mode"])
+        _label_value("Library", _meta["library"])
+        _label_value("Validation Status", _meta["validation_status"])
+        _label_value("Solved At", _meta["timestamp"])
+        if _meta["interpretation"]:
+            pdf.ln(2)
+            pdf.set_font(_font, "B", 10)
+            pdf.set_text_color(80, 80, 80)
+            pdf.cell(40, 6, safe("Interpretation:"), new_x="END")
+            pdf.set_font(_font, "", 10)
+            pdf.set_text_color(30, 30, 30)
+            pdf.multi_cell(0, 6, safe(f"  {frac(_meta['interpretation'])}"),
+                           new_x="LMARGIN", new_y="NEXT")
 
         # ── VERIFICATION ────────────────────────────────────────────
         v_steps = result.get("verification_steps", [])

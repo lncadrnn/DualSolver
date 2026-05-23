@@ -48,7 +48,9 @@ from solver.symbolic import (
     _nonlinear_error_result,
     _count_terms_in_str,
     _validate_characters,
+    _validate_equation_structure,
     _validate_input_length,
+    _normalize_unicode,
     _solve_constant_equation,
 )
 
@@ -98,6 +100,9 @@ def solve_numeric(equation_str: str) -> dict:
     # ── Validate input length ────────────────────────────────────────
     _validate_input_length(equation_str)
 
+    # ── Normalise look-alike / full-width Unicode to ASCII ───────────
+    equation_str = _normalize_unicode(equation_str)
+
     # ── Normalise Unicode symbols ────────────────────────────────────
     equation_str = equation_str.replace('\u221a', 'sqrt')
     equation_str = equation_str.replace('\u03c0', '(pi)')
@@ -106,6 +111,9 @@ def solve_numeric(equation_str: str) -> dict:
 
     # ── Validate input characters ────────────────────────────────────
     _validate_characters(equation_str)
+
+    # ── Validate equation structure (multiple '=', empty segments, …) ─
+    _validate_equation_structure(equation_str)
 
     # ── Split by , or ; to detect a system ───────────────────────────
     raw_equations = [eq.strip() for eq in re.split(r'\s*[;,]\s*', equation_str)
@@ -476,6 +484,7 @@ def _solve_multi_var_numeric(equation_str: str, var_names: list,
             ),
             "parameters": {
                 "equation_type": f"Linear with {len(var_names)} variables",
+                "equation_type_code": "linear_multi_var",
                 "variables": ", ".join(var_names),
                 "approach": "Expand → Isolate each variable → Approximate",
             },
@@ -635,6 +644,7 @@ def _solve_system_numeric(raw_equations: list, var_names: list,
                             "description": "Coefficient matrix is singular.",
                             "parameters": {
                                 "equation_type": "Linear System — No Unique Solution",
+                                "equation_type_code": "linear_system_singular_numeric",
                                 "variables": ", ".join(var_names),
                                 "approach": "Matrix → Detect singularity",
                             },
@@ -755,6 +765,10 @@ def _solve_system_numeric(raw_equations: list, var_names: list,
                         f"System of {n_eq} linear equation"
                         f"{'s' if n_eq != 1 else ''}"
                     ),
+                    "equation_type_code": (
+                        "linear_system_2x2" if n_eq == 2 and n_var == 2
+                        else "linear_system_general"
+                    ),
                     "variables": ", ".join(var_names),
                     "approach": "Matrix form → LU decomposition → Numerical solve",
                 },
@@ -859,6 +873,10 @@ def _build_result(equation_str, fmt_eq, fmt_lhs, fmt_rhs,
             ),
             "parameters": {
                 "equation_type": "Linear (degree 1)",
+                "equation_type_code": (
+                    "linear_degenerate" if method_suffix == "Degenerate"
+                    else "linear_single_var"
+                ),
                 "variable": var_name,
                 "approach": "Expand → Extract coefficients → NumPy division",
             },

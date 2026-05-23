@@ -70,7 +70,7 @@ We use two layers of testing:
 
 | Layer                              | Who Runs It                                                                  | What It Covers                                                                         |
 | ---------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| **Automated tests** (67 tests)     | A developer types one command and the computer checks everything in seconds. | Math accuracy, data validation, error handling, storage, themes, graph generation, edge cases. |
+| **Automated tests** (~97 tests)    | A developer types one command and the computer checks everything in seconds. | Math accuracy, data validation, error handling, storage, themes, graph generation, edge cases, Phase 1 educational additions. |
 | **Manual tests** (checklist below) | A person opens the app and walks through each scenario by hand.              | Visual appearance, animations, user experience, PDF output, clipboard, responsiveness. |
 
 **Automated tests give us speed.** They run in under a minute and catch regressions immediately.
@@ -262,6 +262,27 @@ These tests verify that the app handles unusual, extreme, or unexpected input gr
 
 ---
 
+### 4.8 Phase 1 Improvement Tests — Educational Hardening
+
+> **File:** `tests/test_phase1_improvements.py` (~30 tests)
+
+These tests cover the educational/solver upgrades introduced in the Phase 1 hardening pass.
+
+| Group                              | What It Checks                                                                                       |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Unicode normalization**          | Full-width input (`２ｘ ＝ ４`), Unicode minus (`−`, `–`, `—`), `×` / `÷`, smart quotes all map to ASCII. |
+| **Equation structure validation**  | Repeated `=`, empty segments between separators, sides starting/ending on operators are rejected with a clear message before SymPy sees them. |
+| **Step property names**            | Every `steps[]` and `verification_steps[]` entry carries a `property` field naming the algebraic rule (Subtraction Property of Equality, Distributive Property, Combining Like Terms, etc.). |
+| **`equation_type_code` metadata**  | Every result's `method.parameters` carries a machine-readable classifier (`linear_single_var`, `linear_system_2x2`, `linear_degenerate_identity`, `nonlinear_degree`, etc.) usable by exports and graders. |
+| **Non-linear method hints**        | The educational message for non-linear inputs ends with a `→ ...` suggestion (e.g. "Quadratic Formula" for degree 2, "Newton's Method" for transcendental, "multiply by the denominator" for `1/x`) followed by a `Scope note:` paragraph. |
+| **Substitution evaluation trail**  | LHS and RHS each get their own dedicated evaluation step. The verdict is explicitly TRUE / FALSE / INDETERMINATE. `verification_steps` is now populated (was always `[]` previously). |
+| **Decimal / fractional coefficients** | `0.5x + 1 = 3`, `(1/2)x + 1 = 3`, and `3x + 4 = x + 10` (variables on both sides) all solve to `x = 4` / `x = 3` cleanly. |
+| **Trail consistency across modes** | Symbolic, Numerical, and Substitution results all carry the same required step keys (`step_number`, `description`, `expression`, `explanation`, `property`). |
+
+**Why it matters:** These tests anchor the contract that the educational features actually appear in solver output. If you reword a non-linear message or rename a property label, the failing test points to the affected user-facing string.
+
+---
+
 ## 5. Manual Testing Checklist
 
 Use this checklist when testing the app by hand. Mark each row **Pass** or **Fail**.
@@ -387,6 +408,7 @@ pytest tests/test_storage_unit.py
 pytest tests/test_themes_unit.py
 pytest tests/test_app_and_main_unit.py
 pytest tests/test_edge_cases_unit.py
+pytest tests/test_phase1_improvements.py
 ```
 
 ### Run a single test by name
@@ -398,10 +420,10 @@ pytest -k "test_solve_linear_equation_required_fields"
 ### What success looks like
 
 ```
-========================= 67 passed in X.XXs =========================
+========================= ~97 passed in X.XXs =========================
 ```
 
-All 67 tests should show **passed** with zero failures or errors.
+All tests should show **passed** with zero failures or errors. Phase 1 added a new test file (`test_phase1_improvements.py`) covering Unicode normalization, equation-structure validation, algebraic-property names on steps, `equation_type_code` metadata, non-linear method hints, and the expanded substitution evaluation trail.
 
 ---
 

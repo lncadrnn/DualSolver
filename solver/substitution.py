@@ -30,8 +30,18 @@ from solver.symbolic import (
     _prettify_symbols,
     _normalize_spacing,
     _validate_characters,
+    _validate_equation_structure,
+    _validate_input_length,
+    _normalize_unicode,
     _FRAC_OPEN,
     _frac,
+    # Algebraic-property labels (shared with symbolic.py for trail consistency)
+    _PROP_GIVEN,
+    _PROP_SUBSTITUTION,
+    _PROP_SIMPLIFY,
+    _PROP_DEFINITION,
+    _PROP_IDENTITY,
+    _PROP_CONTRADICTION,
 )
 
 
@@ -112,6 +122,13 @@ def solve_substitution(equation_str: str, values_str: str,
     """
     t_start = time.perf_counter()
 
+    # ── Validate input length ────────────────────────────────────────
+    _validate_input_length(equation_str)
+
+    # ── Normalise look-alike / full-width Unicode to ASCII ───────────
+    equation_str = _normalize_unicode(equation_str)
+    values_str = _normalize_unicode(values_str)
+
     # ── Normalise Unicode ────────────────────────────────────────────
     equation_str = equation_str.replace('\u221a', 'sqrt')
     equation_str = equation_str.replace('\u03c0', '(pi)')
@@ -122,6 +139,7 @@ def solve_substitution(equation_str: str, values_str: str,
 
     # ── Validate ─────────────────────────────────────────────────────
     _validate_characters(equation_str)
+    _validate_equation_structure(equation_str)
 
     if '=' not in equation_str:
         raise ValueError("Equation must contain '='. Example: 2x + 1 = 7")
@@ -198,6 +216,7 @@ def solve_substitution(equation_str: str, values_str: str,
             f"We need to check whether this equation holds true when "
             f"{values_display}."
         ),
+        "property": _PROP_GIVEN,
     })
 
     # Step 2: State the given values
@@ -208,6 +227,7 @@ def solve_substitution(equation_str: str, values_str: str,
             f"We will substitute the given value(s) — {values_display} — "
             f"into the equation and evaluate both sides to check if they are equal."
         ),
+        "property": _PROP_DEFINITION,
     })
 
     # Step 3: Show substitution
@@ -224,9 +244,11 @@ def solve_substitution(equation_str: str, values_str: str,
         "explanation": (
             f"We replace every variable with its given value in the equation."
         ),
+        "property": _PROP_SUBSTITUTION,
     })
 
-    # Step 4: Evaluate the equation
+    # Step 4: Evaluate LHS and RHS — separate steps so students can follow
+    # each side's arithmetic independently.
     subs_dict = {var_symbols[name]: val for name, val in parsed_values.items()}
     lhs_result = simplify(lhs_expr.subs(subs_dict))
     rhs_result = simplify(rhs_expr.subs(subs_dict))
@@ -249,15 +271,26 @@ def solve_substitution(equation_str: str, values_str: str,
         rhs_result_plain = _strip_trailing_zeros(rhs_result_plain)
 
     steps.append({
-        "description": "Evaluate the equation",
-        "expression": f"{lhs_sub_display} = {lhs_result_str}",
+        "description": "Evaluate the left-hand side (LHS)",
+        "expression": f"LHS = {lhs_sub_display} = {lhs_result_str}",
         "explanation": (
-            f"After substituting and simplifying, "
-            f"{lhs_sub_display} evaluates to {lhs_result_plain}."
+            f"Compute the left-hand side after substitution: "
+            f"{lhs_sub_display} = {lhs_result_plain}."
         ),
+        "property": _PROP_SIMPLIFY,
     })
 
-    # Step 5: Move RHS to the left to get the total value of the equation
+    steps.append({
+        "description": "Evaluate the right-hand side (RHS)",
+        "expression": f"RHS = {rhs_sub_display} = {rhs_result_str}",
+        "explanation": (
+            f"Compute the right-hand side after substitution: "
+            f"{rhs_sub_display} = {rhs_result_plain}."
+        ),
+        "property": _PROP_SIMPLIFY,
+    })
+
+    # Step 5: Subtract RHS from LHS — this is the "equation value" (signed gap)
     equation_value = simplify(lhs_result - rhs_result)
     if compute_mode == "numerical":
         equation_value = equation_value.evalf()
@@ -267,32 +300,96 @@ def solve_substitution(equation_str: str, values_str: str,
     if compute_mode == "numerical":
         eq_val_str = _strip_trailing_zeros(eq_val_str)
         eq_val_plain = _strip_trailing_zeros(eq_val_plain)
-    is_valid = equation_value == 0
+
+    # Determine outcome — true / false / indeterminate.
+    # The substituted expression might still contain free variables (e.g. user
+    # supplied a partial substitution for a multi-variable equation); in that
+    # case we cannot decide pass/fail purely from the value, so call it
+    # indeterminate and surface it clearly.
+    _residual_free = (equation_value.free_symbols if hasattr(equation_value, "free_symbols") else set())
+    if _residual_free:
+        outcome = "indeterminate"
+    else:
+        outcome = "true" if equation_value == 0 else "false"
+    is_valid = (outcome == "true")
 
     steps.append({
-        "description": "Get the value of the equation",
+        "description": "Compute the gap (LHS - RHS)",
         "expression": (
-            f"{lhs_result_str} - {rhs_result_str} = {eq_val_str}"
+            f"{lhs_result_str} - ({rhs_result_str}) = {eq_val_str}"
         ),
         "explanation": (
-            f"We move {rhs_result_plain} to the other side: "
-            f"{lhs_result_plain} - {rhs_result_plain} = {eq_val_plain}."
+            f"Subtract the RHS from the LHS. The result, {eq_val_plain}, "
+            f"tells us whether the equation holds: a result of 0 means TRUE, "
+            f"a non-zero numeric result means FALSE, and a result that still "
+            f"contains variables means the outcome depends on those variables."
         ),
+        "property": _PROP_SIMPLIFY,
     })
 
-    validation_status = "pass" if is_valid else "fail"
-    if is_valid:
+    if outcome == "true":
+        validation_status = "pass"
+        verdict_prop = _PROP_IDENTITY
+        verdict_expr = (
+            f"LHS = RHS = {lhs_result_str}   ->  TRUE statement  (OK)"
+        )
+        verdict_explanation = (
+            f"After substitution the equation becomes "
+            f"{lhs_result_plain} = {rhs_result_plain}, which is a TRUE "
+            f"statement. The given values DO satisfy the equation."
+        )
         final_answer = (
             f"{lhs_result_plain} = {rhs_result_plain}\n"
             f"LHS and RHS are equal  ✓\n"
-            f"Equation value = {eq_val_str}"
+            f"Verdict: TRUE — the values satisfy the equation.\n"
+            f"Equation value (LHS - RHS) = {eq_val_str}"
         )
-    else:
+    elif outcome == "false":
+        validation_status = "fail"
+        verdict_prop = _PROP_CONTRADICTION
+        verdict_expr = (
+            f"LHS = {lhs_result_str}, RHS = {rhs_result_str}   ->  FALSE statement  (X)"
+        )
+        verdict_explanation = (
+            f"After substitution the equation becomes "
+            f"{lhs_result_plain} = {rhs_result_plain}, which is FALSE "
+            f"(the two sides are not equal). The given values do NOT "
+            f"satisfy the equation."
+        )
         final_answer = (
             f"{lhs_result_plain} ≠ {rhs_result_plain}\n"
             f"LHS and RHS are NOT equal  ✗\n"
-            f"Equation value = {eq_val_str}"
+            f"Verdict: FALSE — the values do not satisfy the equation.\n"
+            f"Equation value (LHS - RHS) = {eq_val_str}"
         )
+    else:  # indeterminate
+        validation_status = "fail"
+        verdict_prop = _PROP_DEFINITION
+        verdict_expr = (
+            f"LHS - RHS = {eq_val_str}   ->  depends on remaining variables"
+        )
+        verdict_explanation = (
+            f"After substitution the equation still contains free variables "
+            f"({', '.join(sorted(str(s) for s in _residual_free))}). "
+            f"Whether the equation is true depends on what those variables "
+            f"are — supply values for all variables for a definitive verdict."
+        )
+        final_answer = (
+            f"INDETERMINATE — the substitution leaves free variables.\n"
+            f"LHS - RHS = {eq_val_str} (not a constant).\n"
+            f"Supply values for all variables for a definite TRUE / FALSE."
+        )
+
+    # Verification step — restate verdict and what it means.  Even though
+    # substitution is itself a verification activity, mirroring the
+    # symbolic / numerical solvers' shape keeps the trail UI consistent.
+    verification_steps = [{
+        "step_number": 1,
+        "description": "Verify by comparing both sides",
+        "expression": verdict_expr,
+        "explanation": verdict_explanation,
+        "property": verdict_prop,
+    }]
 
     # ── Number the steps ─────────────────────────────────────────────
     for i, step in enumerate(steps, start=1):
@@ -323,6 +420,7 @@ def solve_substitution(equation_str: str, values_str: str,
         ),
         "parameters": {
             "equation_type": "Substitution Verification",
+            "equation_type_code": f"substitution_{outcome}",
             "variables": ", ".join(sorted(parsed_values.keys())),
             "approach": "Substitute → Evaluate LHS → Evaluate RHS → Compare",
         },
@@ -331,6 +429,7 @@ def solve_substitution(equation_str: str, values_str: str,
     summary = {
         "runtime_ms": runtime_ms,
         "total_steps": len(steps),
+        "verification_steps": len(verification_steps),
         "validation_status": validation_status,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "library": (f"NumPy {__import__('numpy').__version__}"
@@ -345,6 +444,6 @@ def solve_substitution(equation_str: str, values_str: str,
         "method": method,
         "steps": steps,
         "final_answer": final_answer,
-        "verification_steps": [],
+        "verification_steps": verification_steps,
         "summary": summary,
     }

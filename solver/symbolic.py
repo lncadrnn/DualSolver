@@ -303,6 +303,22 @@ _DEGREE_NAMES = {
     5: "quintic",
 }
 
+# Algebraic property labels attached to each step.  These name the *rule*
+# being applied — useful for educational tooling so students can see WHY
+# the move is legal, not just WHAT changed.
+_PROP_ADDITION       = "Addition Property of Equality"
+_PROP_SUBTRACTION    = "Subtraction Property of Equality"
+_PROP_MULTIPLICATION = "Multiplication Property of Equality"
+_PROP_DIVISION       = "Division Property of Equality"
+_PROP_DISTRIBUTIVE   = "Distributive Property"
+_PROP_LIKE_TERMS     = "Combining Like Terms"
+_PROP_SIMPLIFY       = "Simplification (arithmetic)"
+_PROP_SUBSTITUTION   = "Substitution"
+_PROP_GIVEN          = "Given (no operation applied yet)"
+_PROP_IDENTITY       = "Reflexive Property (identity / tautology)"
+_PROP_CONTRADICTION  = "Contradiction (false statement)"
+_PROP_DEFINITION     = "Definition / observation"
+
 
 def _degree_name(degree: int) -> str:
     """Return the conventional name for a polynomial of the given degree."""
@@ -371,10 +387,62 @@ def _detect_nonlinear_reason(combined_expanded, var_symbols_list: list,
     return "degree"
 
 
+def _suggested_method(reason: str, highest_deg: int) -> str:
+    """Return one sentence naming the technique that WOULD solve this
+    non-linear equation, so students know what to look up next."""
+    if reason == "transcendental":
+        return (
+            "To solve this, use inverse functions (e.g. arcsin, ln) or a "
+            "numerical method such as Newton's Method or the Bisection Method."
+        )
+    if reason == "denominator":
+        return (
+            "To solve this, first multiply both sides by the denominator to "
+            "clear the fraction — the result is usually a polynomial equation "
+            "(often quadratic) that can then be solved with standard methods."
+        )
+    if reason == "product":
+        return (
+            "Equations like x*y = k describe hyperbolas (or higher surfaces); "
+            "they are usually solved by isolating one variable (y = k/x) and "
+            "treating the other as a parameter, or by using substitution."
+        )
+    # reason == "degree"
+    if highest_deg == 2:
+        return (
+            "To solve this, use the Quadratic Formula  "
+            "x = (-b +/- sqrt(b^2 - 4ac)) / 2a, or factor / complete the square."
+        )
+    if highest_deg == 3:
+        return (
+            "To solve this, try the Rational Root Theorem to find one root, "
+            "then polynomial division reduces it to a quadratic. Cardano's "
+            "formula is the general closed-form method."
+        )
+    if highest_deg == 4:
+        return (
+            "To solve this, factor when possible or apply Ferrari's method. "
+            "Quartics are often solved numerically in practice."
+        )
+    return (
+        f"Polynomials of degree {highest_deg} are typically solved "
+        f"numerically (e.g. Newton's Method) - there is no general "
+        f"closed-form formula for degree 5 or higher (Abel-Ruffini theorem)."
+    )
+
+
+_NONLINEAR_SCOPE_NOTE = (
+    "\n\nScope note: DualSolver is a linear-equation solver by design.\n"
+    "Non-linear inputs are intentionally rejected - they are not\n"
+    "implementation gaps, they fall outside the course scope (COSC 110)."
+)
+
+
 def _build_educational_message(reason: str, highest_deg: int,
                                var_names: list) -> str:
     """Return a multi-line educational message explaining non-linearity."""
     deg_sym = _to_superscript(str(highest_deg)) if highest_deg >= 2 else ""
+    _hint = "\n\n-> " + _suggested_method(reason, highest_deg)
 
     if reason == "transcendental":
         return (
@@ -387,6 +455,7 @@ def _build_educational_message(reason: str, highest_deg: int,
             "Linear equations require the variable to appear on its own (e.g. 2x + 3),\n"
             "not inside any function. Transcendental equations require specialized\n"
             "methods (e.g. inverse trig, numerical solvers) to solve."
+            + _hint + _NONLINEAR_SCOPE_NOTE
         )
 
     if reason == "denominator":
@@ -399,6 +468,7 @@ def _build_educational_message(reason: str, highest_deg: int,
             "Linear equations cannot have negative exponents.\n"
             "The variable must appear exactly as x¹ (plain x) —\n"
             "no negative, fractional, or higher exponents are allowed."
+            + _hint + _NONLINEAR_SCOPE_NOTE
         )
 
     if reason == "product":
@@ -411,6 +481,7 @@ def _build_educational_message(reason: str, highest_deg: int,
             "\n"
             "Linear equations only allow each variable to appear individually —\n"
             "no products, no squared terms, no cross-terms between variables."
+            + _hint + _NONLINEAR_SCOPE_NOTE
         )
 
     # reason == "degree" (default)
@@ -435,6 +506,7 @@ def _build_educational_message(reason: str, highest_deg: int,
         "\n"
         f"Since this equation has degree {highest_deg}, it is non-linear\n"
         "and cannot be solved with linear algebra methods."
+        + _hint + _NONLINEAR_SCOPE_NOTE
     )
 
 
@@ -578,6 +650,7 @@ def _nonlinear_error_result(equation_str: str, lhs_str: str, rhs_str: str,
             ),
             "parameters": {
                 "equation_type": _eq_type_label,
+                "equation_type_code": f"nonlinear_{reason}",
                 "variables": ", ".join(var_names),
             },
         },
@@ -636,6 +709,42 @@ def _validate_input_length(equation_str: str) -> None:
         )
 
 
+# Full-width and "look-alike" Unicode variants commonly pasted from
+# CJK keyboards, smart quotes, or rich-text editors. Each maps to its
+# plain ASCII / DualSolver-supported equivalent.
+_UNICODE_NORMALIZE = {
+    # full-width digits
+    "\uff10": "0", "\uff11": "1", "\uff12": "2", "\uff13": "3", "\uff14": "4",
+    "\uff15": "5", "\uff16": "6", "\uff17": "7", "\uff18": "8", "\uff19": "9",
+    # full-width Latin letters (FF21-FF3A \u2192 A-Z, FF41-FF5A \u2192 a-z)
+    **{chr(0xff21 + i): chr(ord('A') + i) for i in range(26)},
+    **{chr(0xff41 + i): chr(ord('a') + i) for i in range(26)},
+    # full-width / look-alike operators
+    "\uff0b": "+", "\uff0d": "-", "\uff0a": "*", "\uff0f": "/",
+    "\uff1d": "=", "\uff08": "(", "\uff09": ")",
+    "\uff0c": ",", "\uff1b": ";", "\uff0e": ".", "\uff5e": "~",
+    # unicode minus / dash variants \u2192 '-'
+    "\u2212": "-", "\u2013": "-", "\u2014": "-",
+    # unicode multiplication / division
+    "\u00d7": "*", "\u00f7": "/",
+    # smart quotes (sometimes wrap pasted equations) \u2014 strip to nothing
+    "\u2018": "", "\u2019": "", "\u201c": "", "\u201d": "",
+}
+
+
+def _normalize_unicode(equation_str: str) -> str:
+    """Rewrite common Unicode variants to their ASCII equivalents.
+
+    Catches full-width characters, Unicode minus / multiplication signs,
+    smart quotes, and other look-alikes that would otherwise be rejected
+    by _validate_characters.
+    """
+    out_chars = []
+    for ch in equation_str:
+        out_chars.append(_UNICODE_NORMALIZE.get(ch, ch))
+    return "".join(out_chars)
+
+
 def _validate_characters(equation_str: str) -> None:
     """Reject equations that contain characters outside the allowed set.
 
@@ -657,6 +766,70 @@ def _validate_characters(equation_str: str) -> None:
             f"Only letters, numbers, and math symbols "
             f"(+ - * / ^ = ( ) . , ;) are allowed."
         )
+
+
+def _validate_equation_structure(equation_str: str) -> None:
+    """Catch malformed equation structure before SymPy sees it.
+
+    Rejects:
+      - repeated '=' signs in a single equation segment (e.g. 'x == 1' or 'x = 1 = 2')
+      - empty equation segments separated by , or ;
+      - chained operators that aren't valid math (e.g. '++', '**+', '/-+')
+      - hanging operators at the boundaries of an equation segment
+    """
+    # Split into equation segments (comma/semicolon-separated systems)
+    segments = [seg.strip() for seg in re.split(r'\s*[;,]\s*', equation_str) if seg.strip()]
+    if not segments:
+        raise ValueError("Empty equation. Type something like  3x + 2 = 7")
+
+    for seg in segments:
+        # Reject empty segments masked by separators (e.g. "x=1,,y=2")
+        if not seg:
+            raise ValueError(
+                "Empty equation between separators. "
+                "Make sure each comma/semicolon separates a real equation."
+            )
+
+        # Count '=' signs in this segment \u2014 must be exactly one
+        n_eq = seg.count('=')
+        if n_eq == 0:
+            # Will be caught later by the per-mode "must contain '='" check.
+            continue
+        if n_eq > 1:
+            raise ValueError(
+                f"Equation has {n_eq} '=' signs: '{seg}'\n"
+                f"Each equation must contain exactly one '='. "
+                f"Use a comma to separate multiple equations (e.g.  x+y=10, x-y=2)."
+            )
+
+        # Check for chained binary operators that can't be valid math.
+        # Allow ** (exponent) and unary +/- after an operator, but reject
+        # things like '++', '+/', '*=', '/*'.
+        if re.search(r'[+\-*/]{3,}', seg):
+            raise ValueError(
+                f"Malformed expression \u2014 too many operators in a row: '{seg}'"
+            )
+        if re.search(r'[*/]\s*[*/=]', seg.replace('**', '')):
+            raise ValueError(
+                f"Malformed expression \u2014 invalid operator sequence: '{seg}'"
+            )
+
+        # Reject expressions that start or end on a binary-only operator.
+        # ('-' and '+' are allowed at the start as unary signs.)
+        for side in seg.split('='):
+            side = side.strip()
+            if not side:
+                raise ValueError(f"Empty side of equation: '{seg}'")
+            if side[0] in '*/^':
+                raise ValueError(
+                    f"Side starts with an operator: '{side}'. "
+                    f"Each side must begin with a number, variable, or '('."
+                )
+            if side[-1] in '+-*/^':
+                raise ValueError(
+                    f"Side ends with an operator: '{side}'. "
+                    f"Each side must end with a number, variable, or ')'."
+                )
 
 
 def _solve_constant_equation(equation_str: str, raw_equations: list,
@@ -701,6 +874,7 @@ def _solve_constant_equation(equation_str: str, raw_equations: list,
             f"Both sides are constants: left side = {lhs_val}, "
             f"right side = {rhs_val}."
         ),
+        "property": _PROP_SIMPLIFY,
     }]
 
     if is_equal:
@@ -712,6 +886,7 @@ def _solve_constant_equation(equation_str: str, raw_equations: list,
                 "Both sides are equal. This is a tautology — "
                 "it is always true regardless of any variable."
             ),
+            "property": _PROP_IDENTITY,
         })
         final_answer = (
             f"Tautology — {lhs_str} = {rhs_str} is always true.\n"
@@ -726,6 +901,7 @@ def _solve_constant_equation(equation_str: str, raw_equations: list,
                 f"The left side ({lhs_val}) does not equal "
                 f"the right side ({rhs_val}). This is a contradiction."
             ),
+            "property": _PROP_CONTRADICTION,
         })
         final_answer = (
             f"Contradiction — {lhs_str} ≠ {rhs_str}.\n"
@@ -751,6 +927,9 @@ def _solve_constant_equation(equation_str: str, raw_equations: list,
             "description": "No variable found — evaluate whether both sides are equal.",
             "parameters": {
                 "equation_type": "Constant (no variables)",
+                "equation_type_code": (
+                    "constant_tautology" if is_equal else "constant_contradiction"
+                ),
             },
         },
         "steps": steps,
@@ -786,6 +965,11 @@ def solve_linear_equation(equation_str: str) -> dict:
     # ── Validate input length ────────────────────────────────────────
     _validate_input_length(equation_str)
 
+    # ── Normalise look-alike / full-width Unicode to ASCII ───────────
+    # Done BEFORE math-symbol replacements so e.g. full-width input
+    # becomes plain ASCII and is treated as a valid equation.
+    equation_str = _normalize_unicode(equation_str)
+
     # ── Normalise Unicode symbols to parser-friendly equivalents ─────
     equation_str = equation_str.replace('\u221a', 'sqrt')
     equation_str = equation_str.replace('\u03c0', '(pi)')
@@ -794,6 +978,9 @@ def solve_linear_equation(equation_str: str) -> dict:
 
     # ── Validate input characters ───────────────────────────────────────
     _validate_characters(equation_str)
+
+    # ── Validate equation structure (multiple '=', empty segments, …) ─
+    _validate_equation_structure(equation_str)
 
     # ── Split by , or ; to detect a system ──────────────────────────────
     raw_equations = [eq.strip() for eq in re.split(r'\s*[;,]\s*', equation_str)
@@ -883,6 +1070,7 @@ def solve_linear_equation(equation_str: str) -> dict:
         "description": "Starting with the original equation",
         "expression": _fmt_input_eq,
         "explanation": f"We are given the equation {original_lhs_str} = {original_rhs_str}. Our goal is to isolate {var_name} on one side to find its value.",
+        "property": _PROP_GIVEN,
     })
 
     # --- Step: Combine like terms / Expand (if parsing auto-simplified) ---
@@ -938,10 +1126,18 @@ def solve_linear_equation(equation_str: str) -> dict:
             f"{_fmt_input_lhs} = {_fmt_input_rhs}"
             f"  \u2192  {_format_equation(lhs, rhs)}"
         )
+        # Name the algebraic property used for this step
+        if _has_parens and _terms_decreased:
+            _combine_prop = f"{_PROP_DISTRIBUTIVE} + {_PROP_LIKE_TERMS}"
+        elif _has_parens:
+            _combine_prop = _PROP_DISTRIBUTIVE
+        else:
+            _combine_prop = _PROP_LIKE_TERMS
         steps.append({
             "description": desc,
             "expression": _combine_expr,
             "explanation": ". ".join(parts) + ".",
+            "property": _combine_prop,
         })
 
     # --- Step 1: Expand both sides (if needed) ---
@@ -958,6 +1154,7 @@ def solve_linear_equation(equation_str: str) -> dict:
                 f"{before_rhs} becomes {_format_expr_plain(rhs_expanded)}. "
                 f"This removes the parentheses so we can work with individual terms."
             ),
+            "property": _PROP_DISTRIBUTIVE,
         })
         lhs, rhs = lhs_expanded, rhs_expanded
 
@@ -983,6 +1180,7 @@ def solve_linear_equation(equation_str: str) -> dict:
                 f"To move all {var_name}-terms to the left, we subtract {term_str_plain} from both sides. "
                 f"Whatever we do to one side, we must do to the other to keep the equation balanced."
             )
+            _move_prop = _PROP_SUBTRACTION
         else:
             pos_term       = _format_expr(-subtract_term)
             pos_term_plain = _format_expr_plain(-subtract_term)
@@ -993,10 +1191,12 @@ def solve_linear_equation(equation_str: str) -> dict:
                 f"To move all {var_name}-terms to the left, we add {pos_term_plain} to both sides. "
                 f"This cancels the {var_name}-term on the right."
             )
+            _move_prop = _PROP_ADDITION
         steps.append({
             "description": desc,
             "expression": work_expr,
             "explanation": explanation,
+            "property": _move_prop,
         })
         new_lhs = expand(lhs - subtract_term)
         new_rhs = expand(rhs - subtract_term)
@@ -1004,6 +1204,7 @@ def solve_linear_equation(equation_str: str) -> dict:
             "description": "Simplify both sides",
             "expression": _format_equation(new_lhs, new_rhs),
             "explanation": f"Combining like terms: the left side becomes {_format_expr_plain(new_lhs)} and the right side becomes {_format_expr_plain(new_rhs)}.",
+            "property": _PROP_LIKE_TERMS,
         })
         lhs, rhs = new_lhs, new_rhs
 
@@ -1021,6 +1222,7 @@ def solve_linear_equation(equation_str: str) -> dict:
                 f"To isolate the {var_name}-term, we subtract {const_str_plain} from both sides. "
                 f"This moves the constant to the right side."
             )
+            _move_prop = _PROP_SUBTRACTION
         else:
             pos_const       = _format_expr(-lhs_const_now)
             pos_const_plain = _format_expr_plain(-lhs_const_now)
@@ -1031,10 +1233,12 @@ def solve_linear_equation(equation_str: str) -> dict:
                 f"To isolate the {var_name}-term, we add {pos_const_plain} to both sides. "
                 f"This cancels the constant on the left."
             )
+            _move_prop = _PROP_ADDITION
         steps.append({
             "description": desc,
             "expression": work_expr,
             "explanation": explanation,
+            "property": _move_prop,
         })
         new_lhs = expand(lhs - lhs_const_now)
         new_rhs = expand(rhs - lhs_const_now)
@@ -1042,6 +1246,7 @@ def solve_linear_equation(equation_str: str) -> dict:
             "description": "Simplify both sides",
             "expression": _format_equation(new_lhs, new_rhs),
             "explanation": f"Combining like terms: the left side becomes {_format_expr_plain(new_lhs)} and the right side becomes {_format_expr_plain(new_rhs)}.",
+            "property": _PROP_LIKE_TERMS,
         })
         lhs, rhs = new_lhs, new_rhs
 
@@ -1054,6 +1259,7 @@ def solve_linear_equation(equation_str: str) -> dict:
             "description": "Simplify both sides",
             "expression": _format_equation(lhs, rhs),
             "explanation": "We combine like terms on each side to simplify the equation.",
+            "property": _PROP_LIKE_TERMS,
         })
 
     # --- Step 4: Divide both sides by the coefficient of the variable ---
@@ -1074,6 +1280,7 @@ def solve_linear_equation(equation_str: str) -> dict:
                     f"This means the equation is an identity: every real number "
                     f"satisfies it, so there are infinitely many solutions."
                 ),
+                "property": _PROP_IDENTITY,
             }
             final_answer = (
                 f"Infinite solutions — this equation is an identity.\n"
@@ -1090,6 +1297,7 @@ def solve_linear_equation(equation_str: str) -> dict:
                     f"This means the equation is a contradiction: no value of "
                     f"{var_name} can ever satisfy it, so there is no solution."
                 ),
+                "property": _PROP_CONTRADICTION,
             }
             final_answer = (
                 f"No solution — this equation is a contradiction.\n"
@@ -1117,6 +1325,11 @@ def solve_linear_equation(equation_str: str) -> dict:
             "description": "Isolate the variable by performing inverse operations step-by-step.",
             "parameters": {
                 "equation_type": "Linear (degree 1) — Degenerate",
+                "equation_type_code": (
+                    "linear_degenerate_identity"
+                    if is_identity
+                    else "linear_degenerate_contradiction"
+                ),
                 "variable": var_name,
                 "approach": "Expand → Collect like terms → Detect degenerate case",
             },
@@ -1171,14 +1384,17 @@ def solve_linear_equation(equation_str: str) -> dict:
                 f"The coefficient of {var_name} is {coeff_str_plain}. "
                 f"To get {var_name} alone, we divide both sides by {coeff_str_plain}. "
                 f"Dividing {_format_expr_plain(lhs)} by {coeff_str_plain} gives {var_name}, and "
-                f"dividing {_format_expr_plain(rhs)} by {coeff_str_plain} gives us the value."
+                f"dividing {_format_expr_plain(rhs)} by {coeff_str_plain} gives us the value. "
+                f"This is valid because the coefficient is nonzero."
             ),
+            "property": _PROP_DIVISION,
         })
         solution = simplify(rhs / coeff)
         steps.append({
             "description": "Simplify to get the answer",
             "expression": f"{var_name} = {_format_expr(solution)}",
             "explanation": f"Performing the division: {_format_expr_plain(rhs)} ÷ {coeff_str_plain} = {_format_expr_plain(solution)}. So {var_name} equals {_format_expr_plain(solution)}.",
+            "property": _PROP_SIMPLIFY,
         })
     else:
         solution = simplify(rhs)
@@ -1198,6 +1414,7 @@ def solve_linear_equation(equation_str: str) -> dict:
         "description": "Start with the original equation",
         "expression": original_eq,
         "explanation": f"We will substitute {var_name} = {sol_str_plain} back into the original equation to verify our answer is correct.",
+        "property": _PROP_GIVEN,
     })
 
     # Step 2: Show substitution
@@ -1207,6 +1424,7 @@ def solve_linear_equation(equation_str: str) -> dict:
         "description": f"Substitute {var_name} = {sol_str_plain} into both sides",
         "expression": f"{lhs_substituted_str} = {rhs_substituted_str}",
         "explanation": f"We replace every {var_name} with {sol_str_plain} in both the left-hand side and right-hand side of the equation.",
+        "property": _PROP_SUBSTITUTION,
     })
 
     # Step 3: Evaluate LHS
@@ -1215,6 +1433,7 @@ def solve_linear_equation(equation_str: str) -> dict:
         "description": "Evaluate the left-hand side",
         "expression": f"LHS = {lhs_substituted_str} = {_format_expr(lhs_val)}",
         "explanation": f"Computing the left side: we substitute and simplify to get {_format_expr_plain(lhs_val)}.",
+        "property": _PROP_SIMPLIFY,
     })
 
     # Step 4: Evaluate RHS
@@ -1223,14 +1442,33 @@ def solve_linear_equation(equation_str: str) -> dict:
         "description": "Evaluate the right-hand side",
         "expression": f"RHS = {rhs_substituted_str} = {_format_expr(rhs_val)}",
         "explanation": f"Computing the right side: we substitute and simplify to get {_format_expr_plain(rhs_val)}.",
+        "property": _PROP_SIMPLIFY,
     })
 
-    # Step 5: Compare
-    verification_steps.append({
-        "description": "Compare both sides",
-        "expression": f"LHS = {_format_expr(lhs_val)}, RHS = {_format_expr(rhs_val)}\nLHS = RHS  ✓",
-        "explanation": f"Both sides equal {_format_expr_plain(lhs_val)}, confirming that {var_name} = {sol_str_plain} is the correct solution!",
-    })
+    # Step 5: Compare — declare true/false outcome explicitly
+    _both_equal = simplify(lhs_val - rhs_val) == 0
+    if _both_equal:
+        verification_steps.append({
+            "description": "Compare both sides",
+            "expression": f"LHS = {_format_expr(lhs_val)}, RHS = {_format_expr(rhs_val)}\nLHS = RHS  ✓",
+            "explanation": (
+                f"Both sides equal {_format_expr_plain(lhs_val)} — the equation "
+                f"becomes a TRUE statement after substitution, confirming that "
+                f"{var_name} = {sol_str_plain} is the correct solution!"
+            ),
+            "property": _PROP_IDENTITY,
+        })
+    else:
+        verification_steps.append({
+            "description": "Compare both sides",
+            "expression": f"LHS = {_format_expr(lhs_val)}, RHS = {_format_expr(rhs_val)}\nLHS ≠ RHS  ✗",
+            "explanation": (
+                f"LHS evaluated to {_format_expr_plain(lhs_val)} and RHS to "
+                f"{_format_expr_plain(rhs_val)} — the equation becomes a FALSE "
+                f"statement, meaning the candidate value does not satisfy the original."
+            ),
+            "property": _PROP_CONTRADICTION,
+        })
 
     final_answer = f"{var_name} = {_format_expr(solution)}"
 
@@ -1259,6 +1497,7 @@ def solve_linear_equation(equation_str: str) -> dict:
         "description": "Isolate the variable by performing inverse operations step-by-step.",
         "parameters": {
             "equation_type": "Linear (degree 1)",
+            "equation_type_code": "linear_single_var",
             "variable": var_name,
             "approach": "Expand → Collect like terms → Isolate variable → Simplify",
         },
@@ -1469,6 +1708,7 @@ def _solve_multi_var_single_eq(equation_str: str, var_names: list,
             ),
             "parameters": {
                 "equation_type": f"Linear with {len(var_names)} variables",
+                "equation_type_code": "linear_multi_var",
                 "variables": ", ".join(var_names),
                 "approach": "Expand → Isolate each variable",
             },
@@ -1636,6 +1876,7 @@ def _solve_system(raw_equations: list, var_names: list,
                 ),
                 "parameters": {
                     "equation_type": "Linear System — No Solution",
+                    "equation_type_code": "linear_system_inconsistent",
                     "variables": ", ".join(var_names),
                     "approach": "Elimination \u2192 Detect contradiction",
                 },
@@ -1810,6 +2051,10 @@ def _solve_system(raw_equations: list, var_names: list,
                 "equation_type": (
                     f"System of {n_eq} linear equation"
                     f"{'s' if n_eq != 1 else ''}"
+                ),
+                "equation_type_code": (
+                    "linear_system_2x2" if n_eq == 2 and n_var == 2
+                    else "linear_system_general"
                 ),
                 "variables": ", ".join(var_names),
                 "approach": (
