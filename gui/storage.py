@@ -7,11 +7,18 @@ All data is local — no user accounts required.
 
 import json
 import os
+import sys
 import time
 import uuid
 from datetime import datetime
 
-_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
+# When running as a PyInstaller bundle, store user data next to the EXE so it
+# survives reinstalls. In development, use the project-root data/ directory.
+if getattr(sys, 'frozen', False):
+    _BASE_DIR = os.path.dirname(sys.executable)
+else:
+    _BASE_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+_DATA_DIR = os.path.join(_BASE_DIR, "data")
 _DATA_FILE = os.path.join(_DATA_DIR, "dualsolver.json")
 
 # ── Default settings ────────────────────────────────────────────────────

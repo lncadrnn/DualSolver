@@ -1,5 +1,0 @@
-{
-  "tests/test_phase1_improvements.py::TestEquationStructure::test_empty_segment_between_commas_rejected": true,
-  "tests/test_phase1_improvements.py::TestSubstitutionTrail::test_indeterminate_when_free_variable_remains": true,
-  "tests/test_phase1_improvements.py::TestTrailConsistency::test_every_step_has_required_keys[numerical]": true
-}

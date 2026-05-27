@@ -10,8 +10,10 @@ build/
 .eggs/
 *.manifest
 *.spec
+!DualSolver.spec
 venv/
 .venv/
+.conda/
 env/
 .env
 *.env.local
