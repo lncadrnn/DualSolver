@@ -141,46 +141,26 @@ def solve_substitution(equation_str: str, values_str: str,
     _validate_characters(equation_str)
     _validate_equation_structure(equation_str)
 
-    if '=' not in equation_str:
-        raise ValueError("Equation must contain '='. Example: 2x + 1 = 7")
+    is_expression = '=' not in equation_str
 
     # ── Parse the user-supplied values ───────────────────────────────
     user_values = _parse_values(values_str)
 
-    # ── Detect variables in the equation ─────────────────────────────
+    # ── Detect variables ─────────────────────────────────────────────
     eq_vars = _detect_variables(equation_str)
 
-    # Check that user supplied values for all variables in the equation
+    # Check that user supplied values for all variables
     missing = [v for v in eq_vars if v not in user_values]
     if missing:
         raise ValueError(
             f"Missing value(s) for variable(s): {', '.join(missing)}. "
-            f"Please provide values for all variables in the equation."
+            f"Please provide values for all variables."
         )
 
-    # ── Split equation ───────────────────────────────────────────────
-    eq_parts = equation_str.split('=')
-    if len(eq_parts) != 2:
-        raise ValueError("Equation must contain exactly one '=' sign.")
-
-    lhs_str = eq_parts[0].strip()
-    rhs_str = eq_parts[1].strip()
-    if not lhs_str or not rhs_str:
-        raise ValueError("Both sides of the equation must have expressions.")
-
-    # ── Create symbols and parse values ──────────────────────────────
+    # ── Create symbols and parse values (shared for both paths) ──────
     var_symbols = {name: symbols(name) for name in eq_vars}
     sym_list = list(var_symbols.values())
 
-    # Parse each side
-    if len(sym_list) == 1:
-        lhs_expr = _parse_side(lhs_str, sym_list[0])
-        rhs_expr = _parse_side(rhs_str, sym_list[0])
-    else:
-        lhs_expr = _parse_side(lhs_str, sym_list)
-        rhs_expr = _parse_side(rhs_str, sym_list)
-
-    # Parse the user-supplied numeric/symbolic values
     parsed_values = {}
     for var_name, val_str in user_values.items():
         val_str_clean = val_str.replace('^', '**')
@@ -192,17 +172,166 @@ def solve_substitution(equation_str: str, values_str: str,
                 f"Could not parse value for {var_name}: '{val_str}'. Error: {e}"
             )
 
-    # ── Format originals for display ─────────────────────────────────
-    _fmt_lhs = _format_input_str(lhs_str)
-    _fmt_rhs = _format_input_str(rhs_str)
-    _fmt_eq = _format_input_eq(lhs_str, rhs_str)
-
-    # Build a readable values string
     values_display_parts = []
     for var_name in sorted(parsed_values):
         val_formatted = _format_expr(parsed_values[var_name])
         values_display_parts.append(f"{var_name} = {val_formatted}")
     values_display = ", ".join(values_display_parts)
+
+    subs_dict = {var_symbols[name]: val for name, val in parsed_values.items()}
+
+    # ── Expression path (no '=' in input) ────────────────────────────
+    if is_expression:
+        expr_str = equation_str.strip()
+        _fmt_expr = _format_input_str(expr_str)
+
+        expr = (_parse_side(expr_str, sym_list[0])
+                if len(sym_list) == 1
+                else _parse_side(expr_str, sym_list))
+
+        steps = []
+
+        steps.append({
+            "description": "Starting with the original expression",
+            "expression": _fmt_expr,
+            "explanation": (
+                f"We are given the expression {_fmt_expr}. "
+                f"We will evaluate it when {values_display}."
+            ),
+            "property": _PROP_GIVEN,
+        })
+
+        steps.append({
+            "description": "Given values to substitute",
+            "expression": values_display,
+            "explanation": (
+                f"We will substitute {values_display} into every "
+                f"occurrence of the variable(s) and then simplify."
+            ),
+            "property": _PROP_DEFINITION,
+        })
+
+        expr_sub_display = _format_expr(expr)
+        for var_name, val in parsed_values.items():
+            expr_sub_display = expr_sub_display.replace(
+                var_name, f'({_format_expr_plain(val)})'
+            )
+
+        steps.append({
+            "description": f"Substitute {values_display} into the expression",
+            "expression": expr_sub_display,
+            "explanation": "Replace every variable with its given value.",
+            "property": _PROP_SUBSTITUTION,
+        })
+
+        result = simplify(expr.subs(subs_dict))
+        if compute_mode == "numerical":
+            result = result.evalf()
+        result_str = _format_expr(result)
+        result_plain = _format_expr_plain(result)
+        if compute_mode == "numerical":
+            result_str = _strip_trailing_zeros(result_str)
+            result_plain = _strip_trailing_zeros(result_plain)
+
+        steps.append({
+            "description": "Evaluate the expression",
+            "expression": f"{expr_sub_display} = {result_str}",
+            "explanation": (
+                f"After substituting {values_display}, the expression "
+                f"simplifies to {result_plain}."
+            ),
+            "property": _PROP_SIMPLIFY,
+        })
+
+        for i, step in enumerate(steps, start=1):
+            step["step_number"] = i
+
+        final_answer = (
+            f"{_fmt_expr}  =  {result_plain}   (when {values_display})"
+        )
+
+        verification_steps = [{
+            "step_number": 1,
+            "description": "Confirm the evaluated result",
+            "expression": f"{expr_sub_display} = {result_str}",
+            "explanation": (
+                f"Substituting {values_display} into {_fmt_expr} "
+                f"gives {result_plain}."
+            ),
+            "property": _PROP_IDENTITY,
+        }]
+
+        t_end = time.perf_counter()
+        runtime_ms = round((t_end - t_start) * 1000, 2)
+
+        return {
+            "equation": equation_str,
+            "given": {
+                "problem": f"Evaluate expression by substitution: {_fmt_expr}",
+                "inputs": {
+                    "equation":    _fmt_expr,
+                    "left_side":   _fmt_expr,
+                    "right_side":  "",
+                    "values":      values_display,
+                    "computation": (
+                        "Expression Evaluation — Numerical (SymPy)"
+                        if compute_mode == "numerical"
+                        else "Expression Evaluation — Symbolic (SymPy)"
+                    ),
+                },
+            },
+            "method": {
+                "name": "Expression Evaluation",
+                "description": (
+                    "Substitute user-given values into the expression and evaluate."
+                ),
+                "parameters": {
+                    "equation_type":      "Expression Evaluation",
+                    "equation_type_code": "expression_evaluation",
+                    "variables":          ", ".join(sorted(parsed_values.keys())),
+                    "approach":           "Substitute → Evaluate",
+                },
+            },
+            "steps": steps,
+            "final_answer": final_answer,
+            "verification_steps": verification_steps,
+            "summary": {
+                "runtime_ms":         runtime_ms,
+                "total_steps":        len(steps),
+                "verification_steps": len(verification_steps),
+                "validation_status":  "pass",
+                "timestamp":          datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "library": (
+                    f"NumPy {__import__('numpy').__version__}"
+                    if compute_mode == "numerical"
+                    else f"SymPy {sympy.__version__}"
+                ),
+                "python": None,
+            },
+        }
+
+    # ── Equation path — split on '=' ─────────────────────────────────
+    eq_parts = equation_str.split('=')
+    if len(eq_parts) != 2:
+        raise ValueError("Equation must contain exactly one '=' sign.")
+
+    lhs_str = eq_parts[0].strip()
+    rhs_str = eq_parts[1].strip()
+    if not lhs_str or not rhs_str:
+        raise ValueError("Both sides of the equation must have expressions.")
+
+    # Parse each side
+    if len(sym_list) == 1:
+        lhs_expr = _parse_side(lhs_str, sym_list[0])
+        rhs_expr = _parse_side(rhs_str, sym_list[0])
+    else:
+        lhs_expr = _parse_side(lhs_str, sym_list)
+        rhs_expr = _parse_side(rhs_str, sym_list)
+
+    # ── Format originals for display ─────────────────────────────────
+    _fmt_lhs = _format_input_str(lhs_str)
+    _fmt_rhs = _format_input_str(rhs_str)
+    _fmt_eq = _format_input_eq(lhs_str, rhs_str)
 
     # ── Build steps ──────────────────────────────────────────────────
     steps = []
@@ -249,7 +378,6 @@ def solve_substitution(equation_str: str, values_str: str,
 
     # Step 4: Evaluate LHS and RHS — separate steps so students can follow
     # each side's arithmetic independently.
-    subs_dict = {var_symbols[name]: val for name, val in parsed_values.items()}
     lhs_result = simplify(lhs_expr.subs(subs_dict))
     rhs_result = simplify(rhs_expr.subs(subs_dict))
 
