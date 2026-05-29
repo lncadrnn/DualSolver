@@ -112,7 +112,7 @@ class AnimationMixin:
 
         # Detect substitution mode — trimmed trail (no method/verification/graph)
         _method_name = result.get("method", {}).get("name", "")
-        _is_substitution = _method_name == "Substitution Check"
+        _is_substitution = _method_name in ("Substitution Check", "Expression Evaluation")
 
         # ── GIVEN ──────────────────────────────────────────────────
         given = result.get("given", {})
@@ -169,9 +169,9 @@ class AnimationMixin:
                 self._animate_graph(bot, result)
             queue.append(_render_graph)
 
-        # ── WARNINGS (edge cases) ──────────────────────────────────
+        # ── WARNINGS (edge cases, skip for substitution) ──────────
         trail_warnings = result.get("warnings", [])
-        if trail_warnings:
+        if trail_warnings and not _is_substitution:
             def _render_warnings():
                 self._animate_warnings(bot, trail_warnings)
             queue.append(_render_warnings)

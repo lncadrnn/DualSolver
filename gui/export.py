@@ -248,7 +248,7 @@ class ExportMixin:
         copy_btn.pack(side=tk.LEFT, padx=(0, 8))
 
         export_btn = tk.Button(
-            bar, text="⬇ Export", font=btn_font,
+            bar, text="↓ Export", font=btn_font,
             bg=p["STEP_BG"], fg=p["TEXT_BRIGHT"],
             activebackground=p["ACCENT"], activeforeground=accent_text,
             bd=0, padx=14, pady=6, cursor="hand2", relief=tk.FLAT,
