@@ -24,8 +24,11 @@ A desktop step-by-step solver for linear equations, built for COSC 110 (Numeric 
 DualSolver/
 ├── main.py                  # Three-line entry point
 ├── README.md
+├── pyproject.toml           # Project metadata and tool configuration
 ├── requirements.txt         # Runtime dependencies
 ├── requirements-dev.txt     # Dev/test dependencies (pytest)
+├── DualSolver.spec          # PyInstaller build spec
+├── build.bat                # Windows build helper (wraps PyInstaller)
 ├── .gitignore
 │
 ├── gui/                     # Tkinter UI layer - no computation here
@@ -51,22 +54,23 @@ DualSolver/
 │   ├── substitution.py      #   Substitution verifier
 │   └── graph.py             #   Matplotlib figures + case analysis
 │
-├── tests/                   # Pytest suite (110 collected, target ~107 passing)
+├── tests/                   # Pytest suite
 │   ├── conftest.py          #   Sets Agg backend, prepends root to sys.path
-│   ├── VALIDATION_RULES.md  #   Trail output contract (type map + validation rules)
 │   └── test_*.py            #   8 test files covering math, storage, themes, graphs
 │
 ├── assets/                  # Static assets
 │   ├── logo.png
-│   └── back.png
+│   ├── back.png
+│   └── icon.ico
 │
 ├── data/                    # Runtime data - gitignored except .gitkeep
 │   └── .gitkeep
 │
 └── docs/                    # Documentation
     ├── user_guide.md        #   End-user guide (source of truth for in-app help)
-    ├── process.md           #   Implementation walkthrough
-    └── TESTING.md           #   Test plan and manual checklist
+    ├── ARCHITECTURE.md      #   Implementation walkthrough and design decisions
+    ├── TESTING.md           #   Test plan and manual checklist
+    └── VALIDATION_RULES.md  #   Trail output contract (type map + validation rules)
 ```
 
 ---
@@ -144,7 +148,7 @@ The codebase follows a strict two-layer split.
 
 **GUI layer (`gui/`)** - Tkinter UI, imports `solver/`, never the other way around. `DualSolverApp` in `app.py` is assembled from six mixins (`AnimationMixin`, `WidgetMixin`, `ExportMixin`, `SymbolPadMixin`, `SettingsMixin`, `AboutMixin`) that keep features isolated by concern. Solves run on a background daemon thread; results are marshalled back to the main thread via `self.after(0, ...)`. Theme colors are live module-level attributes on `gui.themes` - reading `themes.BG` always returns the current palette value.
 
-**Trail output contract** - every solve returns a dict with seven keys: `equation`, `given`, `method`, `steps`, `final_answer`, `verification_steps`, `summary`. Every step carries a `property` field naming the algebraic rule applied. The full schema and type map are in `tests/VALIDATION_RULES.md`.
+**Trail output contract** - every solve returns a dict with seven keys: `equation`, `given`, `method`, `steps`, `final_answer`, `verification_steps`, `summary`. Every step carries a `property` field naming the algebraic rule applied. The full schema and type map are in `docs/VALIDATION_RULES.md`.
 
 **Storage** - `gui/storage.py` persists settings and history to `data/dualsolver.json`. History is capped at 200 entries; the file auto-recovers from corruption.
 

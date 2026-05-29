@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "dualsolver"
+version = "1.0.0"
+description = "Step-by-step linear equation solver for COSC 110 — Numeric and Symbolic Computation"
+requires-python = ">=3.10"
+dependencies = [
+    "sympy>=1.13",
+    "matplotlib>=3.8",
+    "numpy>=1.26",
+    "fpdf2>=2.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+visual = ["pillow"]
+
+[project.scripts]
+dualsolver = "main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["gui*", "solver*"]

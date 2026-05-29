@@ -1,6 +1,6 @@
-# How DualSolver Parses and Solves Linear Equations
+# DualSolver — Architecture & Implementation
 
-I'll walk you through the entire process using **`2x + 2 = 5`** as the primary example, with a secondary example **`2x + 5x + 3 = 1 + 5`** to show how like-term combining works. Additional sections cover multi-variable equations, systems of equations, non-linear detection, graphing, theming, and the animated trail rendering pipeline.
+This document covers the complete parsing and solving pipeline using **`2x + 2 = 5`** as the primary example, with a secondary example **`2x + 5x + 3 = 1 + 5`** to show how like-term combining works. Additional sections cover multi-variable equations, systems of equations, non-linear detection, graphing, theming, and the animated trail rendering pipeline.
 
 Every computation follows the **Standard Trail Format**, which ensures the UI always displays these seven sections: **GIVEN → METHOD → STEPS → FINAL ANSWER → VERIFICATION → GRAPH & ANALYSIS → SUMMARY**.
 
