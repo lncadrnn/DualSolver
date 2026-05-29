@@ -38,7 +38,7 @@ a = Analysis(
     pathex=[],
     binaries=[*sympy_binaries, *_tk_binaries],
     datas=[
-        ('assets', 'assets'),   # logo.png, back.png → _internal/assets/
+        ('assets', 'assets'),   # logo.png, back.png, icon.ico → _internal/assets/
         *sympy_datas,
         *mpl_datas,
     ],
